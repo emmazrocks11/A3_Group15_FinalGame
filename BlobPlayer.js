@@ -23,6 +23,16 @@ class BlobPlayer {
     this.wobble = 7;
     this.points = 48;
     this.wobbleFreq = 0.9;
+
+    // Energy system
+    this.energy = 200;
+    this.maxEnergy = 200;
+    this.energyRegenWalk = 0.2;
+    this.energyRegenStill = 0.6;
+    this.energySprintingCost = 0.4;
+    this.energyJumpCost = 10;
+    this.isSprinting = false;
+    this.starsCollected = 0;
   }
 
   spawnFromLevel(level) {
@@ -36,12 +46,16 @@ class BlobPlayer {
 
     this.gravity = level.gravity;
     this.jumpV = level.jumpV;
+    this.energy = this.maxEnergy;
   }
 
   tryJump() {
-    if (this.onGround) {
-      this.vy = this.jumpV;
+    if (this.onGround && this.energy >= 5) {
+      // Scale jump power based on energy (at 0 energy, jump is 50% power)
+      const energyFactor = map(this.energy, 0, this.maxEnergy, 0.5, 1.0);
+      this.vy = this.jumpV * energyFactor;
       this.onGround = false;
+      this.energy = max(0, this.energy - this.energyJumpCost);
     }
   }
 
@@ -51,9 +65,32 @@ class BlobPlayer {
     if (keyIsDown(65) || keyIsDown(LEFT_ARROW)) move -= 1;
     if (keyIsDown(68) || keyIsDown(RIGHT_ARROW)) move += 1;
 
-    this.vx += this.accel * move;
+    // Sprinting logic
+    this.isSprinting = keyIsDown(SHIFT) && move !== 0 && this.energy > 0;
+    let currentMaxRun = this.maxRun;
+    
+    if (this.isSprinting) {
+      currentMaxRun *= 1.5;
+      this.energy = max(0, this.energy - this.energySprintingCost);
+    }
+
+    // Scale speed based on energy (at 0 energy, speed is 60% of normal)
+    const energySpeedFactor = map(this.energy, 0, this.maxEnergy, 0.6, 1.0);
+    const effectiveAccel = this.accel * (this.isSprinting ? 1.5 : 1.0) * energySpeedFactor;
+    const effectiveMaxRun = currentMaxRun * energySpeedFactor;
+
+    // Energy regeneration
+    if (!this.isSprinting) {
+      if (move === 0 && this.onGround) {
+        this.energy = min(this.maxEnergy, this.energy + this.energyRegenStill);
+      } else if (this.onGround) {
+        this.energy = min(this.maxEnergy, this.energy + this.energyRegenWalk);
+      }
+    }
+
+    this.vx += effectiveAccel * move;
     this.vx *= this.onGround ? this.frictionGround : this.frictionAir;
-    this.vx = constrain(this.vx, -this.maxRun, this.maxRun);
+    this.vx = constrain(this.vx, -effectiveMaxRun, effectiveMaxRun);
 
     this.vy += this.gravity;
 

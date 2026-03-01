@@ -25,9 +25,12 @@ let levelIndex = 0;
 let level;
 let player;
 let cam;
+let collectiblesData;
+let stars = [];
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
+  collectiblesData = loadJSON("collectibles.json");
 }
 
 function setup() {
@@ -45,6 +48,14 @@ function loadLevel(i) {
   player = new BlobPlayer();
   player.spawnFromLevel(level);
 
+  // Initialize stars from JSON
+  stars = [];
+  if (collectiblesData && collectiblesData.stars) {
+    for (let s of collectiblesData.stars) {
+      stars.push(new Star(s.x, s.y));
+    }
+  }
+
   cam.x = player.x - width / 2;
   cam.y = 0;
   cam.clampToWorld(level.w, level.h);
@@ -53,6 +64,10 @@ function loadLevel(i) {
 function draw() {
   // --- game state ---
   player.update(level);
+
+  for (let s of stars) {
+    s.update(player);
+  }
 
   // Fall death → respawn
   if (player.y - player.r > level.deathY) {
@@ -68,6 +83,9 @@ function draw() {
   // --- draw ---
   cam.begin();
   level.drawWorld();
+  for (let s of stars) {
+    s.draw();
+  }
   player.draw(level.theme.blob);
   cam.end();
 
@@ -75,7 +93,7 @@ function draw() {
   fill(0);
   noStroke();
   text(level.name + " (Example 5)", 10, 18);
-  text("A/D or ←/→ move • Space/W/↑ jump • Fall = respawn", 10, 36);
+  text("A/D or ←/→ move • Space/W/↑ jump • Shift sprint • Fall = respawn", 10, 36);
   text("camLerp(JSON): " + level.camLerp + "  world.w: " + level.w, 10, 54);
   text("cam: " + cam.x + ", " + cam.y, 10, 90);
   const p0 = level.platforms[0];
@@ -91,6 +109,39 @@ function draw() {
     10,
     72,
   );
+
+  // Energy Bar HUD
+  const barW = 200;
+  const barH = 15;
+  const barX = 10;
+  const barY = 120;
+
+  // Background
+  fill(50, 50, 50, 150);
+  rect(barX, barY, barW, barH, 5);
+
+  // Foreground (Energy)
+  const energyW = map(player.energy, 0, player.maxEnergy, 0, barW);
+  const energyCol = lerpColor(color(255, 50, 50), color(50, 255, 50), player.energy / player.maxEnergy);
+  fill(energyCol);
+  rect(barX, barY, energyW, barH, 5);
+
+  // Label
+  fill(0);
+  text("Energy", barX, barY - 5);
+
+  // Stars Counter HUD (Top Right)
+  fill(255, 215, 0); // Gold
+  stroke(0);
+  strokeWeight(2);
+  textSize(24);
+  textAlign(RIGHT, TOP);
+  text("⭐ " + player.starsCollected, width - 20, 20);
+  
+  // Reset text settings for other HUD elements
+  textAlign(LEFT, TOP);
+  textSize(14);
+  noStroke();
 }
 
 function keyPressed() {

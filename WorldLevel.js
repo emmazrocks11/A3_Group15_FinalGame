@@ -24,7 +24,7 @@ class WorldLevel {
 
     // Platforms
     this.platforms = (levelJson.platforms ?? []).map(
-      (p) => new Platform(p.x, p.y, p.w, p.h),
+      (p) => new Platform(p.x, p.y, p.w, p.h, p.color, p.options),
     );
   }
 
@@ -33,9 +33,16 @@ drawWorld() {
   push();
   rectMode(CORNER);          // critical: undo any global rectMode(CENTER) [web:230]
   noStroke();
-  fill(this.theme.platform);
 
-  for (const p of this.platforms) rect(p.x, p.y, p.w, p.h); // x,y = top-left [web:234]
+  for (const p of this.platforms) {
+    p.update(); // Update moving platforms
+    if (p.color) {
+      fill(p.color);
+    } else {
+      fill(this.theme.platform);
+    }
+    rect(p.x, p.y, p.w, p.h); // x,y = top-left [web:234]
+  }
   pop();
 }
 }
