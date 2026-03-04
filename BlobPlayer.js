@@ -25,8 +25,9 @@ class BlobPlayer {
     this.wobbleFreq = 0.9;
 
     // Energy system
-    this.energy = 200;
-    this.maxEnergy = 200;
+    this.baseMaxEnergy = 200;
+    this.maxEnergy = this.baseMaxEnergy;
+    this.energy = this.maxEnergy;
     this.energyRegenWalk = 0.2;
     this.energyRegenStill = 0.6;
     this.energySprintingCost = 0.4;
@@ -51,6 +52,8 @@ class BlobPlayer {
 
     this.gravity = level.gravity;
     this.jumpV = level.jumpV;
+    this.maxEnergy = this.baseMaxEnergy;
+    this.applyStarEnergyBonus(this.starsCollected || 0);
     this.energy = this.maxEnergy;
   }
 
@@ -164,6 +167,11 @@ class BlobPlayer {
     this.x = constrain(this.x, this.r, level.w - this.r);
 
     this.t += this.tSpeed;
+  }
+
+  applyStarEnergyBonus(count) {
+    const bonusPerStar = 15;
+    this.maxEnergy = this.baseMaxEnergy + count * bonusPerStar;
   }
 
   draw(colHex) {

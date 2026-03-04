@@ -29,6 +29,7 @@ let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
 let gameStarted = false;
+let energyBoostTimer = 0;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -68,6 +69,8 @@ function respawnPlayer() {
   player = new BlobPlayer();
   player.spawnFromLevel(level);
   player.starsCollected = totalStarsCollected;
+  player.applyStarEnergyBonus(totalStarsCollected);
+  player.energy = player.maxEnergy;
 
   cam.x = player.x - width / 2;
   cam.y = 0;
@@ -88,6 +91,9 @@ function draw() {
   for (let s of stars) {
     if (s.update(player)) {
       totalStarsCollected++;
+      player.applyStarEnergyBonus(player.starsCollected);
+      player.energy = player.maxEnergy;
+      energyBoostTimer = 60;
     }
   }
 
@@ -126,6 +132,11 @@ function draw() {
   const barX = 16;
   const barY = 50;
 
+  const boostActive = energyBoostTimer > 0;
+  if (boostActive) {
+    energyBoostTimer--;
+  }
+
   // Background with border
   fill(240, 240, 245);
   stroke(180, 180, 190);
@@ -134,7 +145,10 @@ function draw() {
 
   // Foreground (Energy)
   const energyW = map(player.energy, 0, player.maxEnergy, 0, barW - 4);
-  const energyCol = lerpColor(color(255, 80, 80), color(100, 200, 255), player.energy / player.maxEnergy);
+  let energyCol = lerpColor(color(255, 80, 80), color(100, 200, 255), player.energy / player.maxEnergy);
+  if (boostActive) {
+    energyCol = color(90, 220, 140);
+  }
   fill(energyCol);
   noStroke();
   rect(barX + 2, barY + 2, energyW, barH - 4, 6);
@@ -145,6 +159,17 @@ function draw() {
   textStyle(NORMAL);
   textSize(12);
   text("Energy", barX, barY - 18);
+
+  if (boostActive) {
+    // Bold, larger arrow to the right of the bar
+    textFont("Poppins");
+    textStyle(BOLD);
+    textSize(20);
+    fill(90, 220, 140);
+    const arrowX = barX + barW + 12;
+    const arrowY = barY + barH / 2 - 10;
+    text("↑", arrowX, arrowY);
+  }
 
   // Stars Counter HUD (Top Right)
   textFont("Poppins");
