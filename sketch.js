@@ -28,6 +28,7 @@ let cam;
 let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
+let gameStarted = false;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -74,6 +75,13 @@ function respawnPlayer() {
 }
 
 function draw() {
+  background(200, 220, 255);
+
+  if (!gameStarted) {
+    drawStartScreen();
+    return;
+  }
+
   // --- game state ---
   player.update(level);
 
@@ -160,7 +168,19 @@ function draw() {
 
 function keyPressed() {
   if (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW) {
-    player.tryJump();
+    if (!gameStarted) {
+      gameStarted = true;
+    } else {
+      player.tryJump();
+    }
   }
   if (key === "r" || key === "R") loadLevel(levelIndex);
+}
+
+function mousePressed() {
+  if (gameStarted) return;
+
+  if (isPlayButtonClicked(mouseX, mouseY)) {
+    gameStarted = true;
+  }
 }
