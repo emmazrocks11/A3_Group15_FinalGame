@@ -37,7 +37,7 @@ function preload() {
 
 function setup() {
   createCanvas(VIEW_W, VIEW_H);
-  textFont("sans-serif");
+  textFont("Inter");
   textSize(14);
 
   cam = new Camera2D(width, height);
@@ -111,57 +111,57 @@ function draw() {
   player.draw(level.theme.blob);
   cam.end();
 
-  // HUD
-  fill(0);
+  // HUD - Level Name
+  fill(40, 40, 50);
+  textFont("Poppins");
+  textStyle(BOLD);
+  textSize(20);
+  textAlign(LEFT, TOP);
   noStroke();
-  text(level.name + " (Example 5)", 10, 18);
-  text("A/D or ←/→ move • Space/W/↑ jump • Shift sprint • Fall = respawn", 10, 36);
-  text("camLerp(JSON): " + level.camLerp + "  world.w: " + level.w, 10, 54);
-  text("cam: " + cam.x + ", " + cam.y, 10, 90);
-  const p0 = level.platforms[0];
-  text(`p0: x=${p0.x} y=${p0.y} w=${p0.w} h=${p0.h}`, 10, 108);
-
-  text(
-    "platforms: " +
-      level.platforms.length +
-      " start: " +
-      level.start.x +
-      "," +
-      level.start.y,
-    10,
-    72,
-  );
+  text(level.name, 16, 14);
 
   // Energy Bar HUD
-  const barW = 200;
-  const barH = 15;
-  const barX = 10;
-  const barY = 120;
+  const barW = 220;
+  const barH = 20;
+  const barX = 16;
+  const barY = 50;
 
-  // Background
-  fill(50, 50, 50, 150);
-  rect(barX, barY, barW, barH, 5);
+  // Background with border
+  fill(240, 240, 245);
+  stroke(180, 180, 190);
+  strokeWeight(2);
+  rect(barX, barY, barW, barH, 8);
 
   // Foreground (Energy)
-  const energyW = map(player.energy, 0, player.maxEnergy, 0, barW);
-  const energyCol = lerpColor(color(255, 50, 50), color(50, 255, 50), player.energy / player.maxEnergy);
+  const energyW = map(player.energy, 0, player.maxEnergy, 0, barW - 4);
+  const energyCol = lerpColor(color(255, 80, 80), color(100, 200, 255), player.energy / player.maxEnergy);
   fill(energyCol);
-  rect(barX, barY, energyW, barH, 5);
+  noStroke();
+  rect(barX + 2, barY + 2, energyW, barH - 4, 6);
 
   // Label
-  fill(0);
-  text("Energy", barX, barY - 5);
+  fill(60, 60, 70);
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(12);
+  text("Energy", barX, barY - 18);
 
   // Stars Counter HUD (Top Right)
-  fill(255, 215, 0); // Gold
-  stroke(0);
-  strokeWeight(2);
-  textSize(24);
+  textFont("Poppins");
+  textStyle(BOLD);
+  textSize(28);
   textAlign(RIGHT, TOP);
-  text("⭐ " + player.starsCollected, width - 20, 20);
+  fill(255, 215, 0);
+  noStroke();
+  text("⭐", width - 45, 12);
   
-  // Reset text settings for other HUD elements
+  fill(40, 40, 50);
+  text(player.starsCollected, width - 18, 16);
+  
+  // Reset text settings
   textAlign(LEFT, TOP);
+  textFont("Inter");
+  textStyle(NORMAL);
   textSize(14);
   noStroke();
 }
