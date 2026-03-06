@@ -36,6 +36,7 @@ let respawnPoint = null;
 let checkpointMessage = null;
 let checkpointMessageTimer = 0;
 let rainZone = null;
+let lightningZone = null;
 let checkpointTpTargets = [];
 
 function preload() {
@@ -95,6 +96,12 @@ function loadLevel(i) {
     rainZone = null;
   }
 
+  if (collectiblesData && collectiblesData.lightningZone) {
+    lightningZone = collectiblesData.lightningZone;
+  } else {
+    lightningZone = null;
+  }
+
   checkpointTpTargets = [];
   if (startCheckpoint) {
     checkpointTpTargets.push({
@@ -108,6 +115,13 @@ function loadLevel(i) {
       label: checkpoint.text || "Checkpoint",
       x: checkpoint.x + 2,
       y: checkpoint.y - 26,
+    });
+  }
+  if (lightningZone) {
+    checkpointTpTargets.push({
+      label: "Lightning",
+      x: (lightningZone.startX + lightningZone.endX) / 2,
+      y: 200,
     });
   }
 
@@ -153,6 +167,11 @@ function draw() {
 
   player.update(level);
 
+  // Lightning strikes every 4 seconds. If hit, invert controls temporarily.
+  if (lightningZone && checkLightningHit(lightningZone, player)) {
+    player.invertTimer = 180; // ~3 seconds
+  }
+
   for (let s of stars) {
     if (s.update(player)) {
       totalStarsCollected++;
@@ -190,6 +209,7 @@ function draw() {
   cam.begin();
   level.drawWorld();
   if (rainZone) drawRainZone(rainZone);
+  if (lightningZone) drawLightningZone(lightningZone);
   if (startCheckpoint) startCheckpoint.draw();
   if (checkpoint) checkpoint.draw();
   for (let s of stars) {
@@ -420,6 +440,101 @@ function drawRainZone(zone) {
     }
   }
   noStroke();
+}
+
+function drawLightningZone(zone) {
+  const left = max(zone.startX, cam.x - 50);
+  const right = min(zone.endX, cam.x + width + 50);
+  if (left >= right) return;
+
+  const cloudTopY = 40;
+  const cloudWidth = 70;
+  const cloudStep = 320;
+  const cloudBases = [];
+  for (let x = zone.startX + 120; x <= zone.endX; x += cloudStep) {
+    cloudBases.push(x + ((x * 0.13) % 140) - 70);
+  }
+
+  // Clouds
+  noStroke();
+  fill(110, 120, 135, 210);
+  for (const cx of cloudBases) {
+    if (cx < left - 100 || cx > right + 100) continue;
+    ellipse(cx, cloudTopY + 10, 110, 40);
+    ellipse(cx - 42, cloudTopY + 20, 85, 32);
+    ellipse(cx + 46, cloudTopY + 18, 90, 34);
+    ellipse(cx - 12, cloudTopY + 2, 70, 28);
+    ellipse(cx + 24, cloudTopY + 4, 62, 24);
+  }
+
+  // Bolts
+  const cycleFrames = 240; // 4 seconds @ 60fps
+  const strikeFrames = 30;
+  const strikeOn = frameCount % cycleFrames < strikeFrames;
+  if (!strikeOn) return;
+
+  for (let i = 0; i < cloudBases.length; i++) {
+    const cx = cloudBases[i];
+    if (cx < left - 100 || cx > right + 100) continue;
+
+    // Alternate which clouds strike to avoid wall-of-bolts
+    if (i % 2 === (Math.floor(frameCount / cycleFrames) % 2)) continue;
+
+    const boltTopY = 82;
+    const boltBottomY = 500;
+
+    // Glow
+    noStroke();
+    fill(255, 255, 200, 90);
+    rect(cx - 10, boltTopY, 20, boltBottomY - boltTopY, 8);
+
+    // Bolt shape
+    stroke(255, 245, 160, 220);
+    strokeWeight(3);
+    noFill();
+    beginShape();
+    vertex(cx, boltTopY);
+    vertex(cx - 12, boltTopY + 55);
+    vertex(cx + 6, boltTopY + 100);
+    vertex(cx - 16, boltTopY + 160);
+    vertex(cx + 10, boltTopY + 220);
+    vertex(cx - 8, boltTopY + 290);
+    vertex(cx + 4, boltBottomY);
+    endShape();
+  }
+  noStroke();
+}
+
+function checkLightningHit(zone, player) {
+  const cycleFrames = 240; // 4 seconds @ 60fps
+  const strikeFrames = 30;
+  const strikeOn = frameCount % cycleFrames < strikeFrames;
+  if (!strikeOn) return false;
+
+  if (player.x < zone.startX || player.x > zone.endX) return false;
+
+  const boltTopY = 82;
+  const boltBottomY = 500;
+  if (player.y < boltTopY || player.y > boltBottomY) return false;
+
+  // Match cloud positions used for drawing
+  const cloudStep = 320;
+  const cloudBases = [];
+  for (let x = zone.startX + 120; x <= zone.endX; x += cloudStep) {
+    cloudBases.push(x + ((x * 0.13) % 140) - 70);
+  }
+
+  const boltHalfW = 14;
+  for (let i = 0; i < cloudBases.length; i++) {
+    // Alternate bolts same way as drawLightningZone
+    if (i % 2 === (Math.floor(frameCount / cycleFrames) % 2)) continue;
+
+    const cx = cloudBases[i];
+    if (Math.abs(player.x - cx) <= boltHalfW + player.r * 0.4) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function keyPressed() {

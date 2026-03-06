@@ -38,6 +38,9 @@ class BlobPlayer {
     this.canDoubleJump = false;
     this.ridingPlatform = null;
     this.inRain = false;
+
+    // Status effects
+    this.invertTimer = 0; // frames remaining for inverted left/right
   }
 
   spawnFromLevel(level) {
@@ -90,10 +93,13 @@ class BlobPlayer {
   }
 
   update(level) {
+    if (this.invertTimer > 0) this.invertTimer--;
+
     // input
     let move = 0;
     if (keyIsDown(65) || keyIsDown(LEFT_ARROW)) move -= 1;
     if (keyIsDown(68) || keyIsDown(RIGHT_ARROW)) move += 1;
+    if (this.invertTimer > 0) move *= -1;
 
     // Reset double jump if we land
     if (this.onGround) {
