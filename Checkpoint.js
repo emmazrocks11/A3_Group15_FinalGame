@@ -1,41 +1,54 @@
 class Checkpoint {
-  constructor(x, y) {
+  constructor(x, y, text = "Checkpoint") {
     this.x = x;
     this.y = y;
-    this.poleH = 48;
-    this.poleW = 4;
-    this.flagW = 28;
-    this.flagH = 20;
+    this.text = text;
+    this.stemH = 44;
+    this.headY = -this.stemH;
     this.hitR = 24;
   }
 
   update(player) {
-    const d = dist(player.x, player.y, this.x + this.poleW / 2, this.y - this.poleH / 2);
-    return d < player.r + this.hitR;
+    const centerY = this.y + this.headY;
+    return dist(player.x, player.y, this.x, centerY) < player.r + this.hitR;
   }
 
   draw() {
     push();
     translate(this.x, this.y);
 
-    // Pole
-    fill(80, 60, 40);
-    stroke(60, 45, 30);
-    strokeWeight(1);
-    rect(0, 0, this.poleW, -this.poleH);
+    // Stem
+    stroke(60, 120, 50);
+    strokeWeight(6);
+    noFill();
+    line(0, 0, 0, this.headY);
 
-    // Flag (triangle)
+    // Leaves
     noStroke();
-    fill(50, 180, 80);
-    beginShape();
-    vertex(this.poleW, -this.poleH);
-    vertex(this.poleW + this.flagW, -this.poleH + this.flagH / 2);
-    vertex(this.poleW, -this.poleH + this.flagH);
-    endShape(CLOSE);
+    fill(70, 140, 55);
+    ellipse(4, this.headY + 20, 10, 18);
+    ellipse(-6, this.headY + 8, 8, 14);
 
-    // Pole top (finial)
-    fill(220, 180, 80);
-    ellipse(this.poleW / 2, -this.poleH, 8, 8);
+    // Petals (yellow, around center)
+    fill(255, 200, 40);
+    const petalCount = 12;
+    for (let i = 0; i < petalCount; i++) {
+      const a = (i / petalCount) * TAU;
+      push();
+      translate(0, this.headY);
+      rotate(a);
+      ellipse(14, 0, 12, 8);
+      pop();
+    }
+
+    // Center disk (brown seeds)
+    fill(90, 55, 25);
+    noStroke();
+    ellipse(0, this.headY, 16, 16);
+
+    // Center highlight
+    fill(120, 75, 35);
+    ellipse(-3, this.headY - 3, 6, 6);
 
     pop();
   }

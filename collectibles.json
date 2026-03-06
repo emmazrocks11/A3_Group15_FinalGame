@@ -1,5 +1,5 @@
 {
-  "checkpoint": { "x": 4558, "y": 380 },
+  "checkpoint": { "x": 4558, "y": 424, "text": "Balance" },
   "stars": [
     { "x": 850, "y": 210 },
     { "x": 1200, "y": 170 },

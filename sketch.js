@@ -32,6 +32,8 @@ let gameStarted = false;
 let energyBoostTimer = 0;
 let checkpoint = null;
 let respawnPoint = null;
+let checkpointMessage = null;
+let checkpointMessageTimer = 0;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -64,12 +66,14 @@ function loadLevel(i) {
 
   if (collectiblesData && collectiblesData.checkpoint) {
     const c = collectiblesData.checkpoint;
-    checkpoint = new Checkpoint(c.x, c.y);
+    checkpoint = new Checkpoint(c.x, c.y, c.text || "Checkpoint");
   } else {
     checkpoint = null;
   }
 
   respawnPoint = null;
+  checkpointMessage = null;
+  checkpointMessageTimer = 0;
 
   cam.x = player.x - width / 2;
   cam.y = 0;
@@ -116,7 +120,12 @@ function draw() {
   }
 
   if (checkpoint && checkpoint.update(player)) {
+    const wasFirstReach = respawnPoint === null;
     respawnPoint = { x: checkpoint.x + 2, y: checkpoint.y - player.r };
+    if (checkpoint.text && wasFirstReach) {
+      checkpointMessage = checkpoint.text;
+      checkpointMessageTimer = 0;
+    }
   }
 
   // Fall death → respawn (preserve stars)
@@ -234,6 +243,35 @@ function draw() {
   fill(40, 40, 50);
   text(player.starsCollected, width - 18, starY + 2); // Slight offset for visual alignment with text baseline
   
+  // Checkpoint message (fade in, hold, fade out)
+  if (checkpointMessage) {
+    checkpointMessageTimer++;
+    const fadeInFrames = 45;
+    const holdFrames = 120;
+    const fadeOutFrames = 45;
+    let alpha = 0;
+    if (checkpointMessageTimer < fadeInFrames) {
+      alpha = (checkpointMessageTimer / fadeInFrames) * 255;
+    } else if (checkpointMessageTimer < fadeInFrames + holdFrames) {
+      alpha = 255;
+    } else if (checkpointMessageTimer < fadeInFrames + holdFrames + fadeOutFrames) {
+      const t = (checkpointMessageTimer - fadeInFrames - holdFrames) / fadeOutFrames;
+      alpha = 255 * (1 - t);
+    } else {
+      checkpointMessage = null;
+    }
+    if (checkpointMessage && alpha > 0) {
+      push();
+      fill(40, 40, 50, alpha);
+      textFont("Poppins");
+      textStyle(BOLD);
+      textSize(64);
+      textAlign(CENTER, CENTER);
+      text(checkpointMessage, width / 2, height / 2);
+      pop();
+    }
+  }
+
   // Reset text settings
   textAlign(LEFT, TOP);
   textFont("Inter");
