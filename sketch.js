@@ -31,6 +31,7 @@ let totalStarsCollected = 0;
 let gameStarted = false;
 let energyBoostTimer = 0;
 let checkpoint = null;
+let checkpoint2 = null;
 let startCheckpoint = null;
 let respawnPoint = null;
 let checkpointMessage = null;
@@ -79,6 +80,13 @@ function loadLevel(i) {
     checkpoint = null;
   }
 
+  if (collectiblesData && collectiblesData.checkpoint2) {
+    const c2 = collectiblesData.checkpoint2;
+    checkpoint2 = new Checkpoint(c2.x, c2.y, c2.text || "Checkpoint");
+  } else {
+    checkpoint2 = null;
+  }
+
   if (collectiblesData && collectiblesData.startCheckpoint) {
     const s = collectiblesData.startCheckpoint;
     startCheckpoint = new Checkpoint(s.x, s.y, null);
@@ -115,6 +123,13 @@ function loadLevel(i) {
       label: checkpoint.text || "Checkpoint",
       x: checkpoint.x + 2,
       y: checkpoint.y - 26,
+    });
+  }
+  if (checkpoint2) {
+    checkpointTpTargets.push({
+      label: checkpoint2.text || "Checkpoint 2",
+      x: checkpoint2.x + 2,
+      y: checkpoint2.y - 26,
     });
   }
   if (lightningZone) {
@@ -190,6 +205,15 @@ function draw() {
     }
   }
 
+  if (checkpoint2 && checkpoint2.update(player)) {
+    respawnPoint = { x: checkpoint2.x + 2, y: checkpoint2.y - player.r };
+    if (checkpoint2.text && !checkpoint2.messageShown) {
+      checkpoint2.messageShown = true;
+      checkpointMessage = checkpoint2.text;
+      checkpointMessageTimer = 0;
+    }
+  }
+
   if (startCheckpoint && startCheckpoint.update(player)) {
     respawnPoint = { x: startCheckpoint.x + 2, y: startCheckpoint.y - player.r };
   }
@@ -212,6 +236,7 @@ function draw() {
   if (lightningZone) drawLightningZone(lightningZone);
   if (startCheckpoint) startCheckpoint.draw();
   if (checkpoint) checkpoint.draw();
+  if (checkpoint2) checkpoint2.draw();
   for (let s of stars) {
     s.draw();
   }
