@@ -25,6 +25,9 @@ let levelIndex = 0;
 let level;
 let player;
 let cam;
+let skyImg;
+let mountainImg;
+let groundImg;
 let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
@@ -43,6 +46,12 @@ let checkpointTpTargets = [];
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
   collectiblesData = loadJSON("collectibles.json");
+  // Load the tiled sky background (file lives in `assets/sky.png`)
+  skyImg = loadImage("assets/sky.png");
+  // Load mountain layer to draw on top of the sky (file: assets/mountain.png)
+  mountainImg = loadImage("assets/mountain.png");
+  // Load ground layer to draw in front of mountains (file: assets/ground.png)
+  groundImg = loadImage("assets/ground.png");
 }
 
 function setup() {
@@ -223,7 +232,10 @@ function draw() {
   }
 
   if (startCheckpoint && startCheckpoint.update(player)) {
-    respawnPoint = { x: startCheckpoint.x + 2, y: startCheckpoint.y - player.r };
+    respawnPoint = {
+      x: startCheckpoint.x + 2,
+      y: startCheckpoint.y - player.r,
+    };
   }
 
   // Fall death → respawn (preserve stars)
@@ -279,7 +291,11 @@ function draw() {
 
   // Foreground (Energy)
   const energyW = map(player.energy, 0, player.maxEnergy, 0, barW - 4);
-  let energyCol = lerpColor(color(255, 80, 80), color(100, 200, 255), player.energy / player.maxEnergy);
+  let energyCol = lerpColor(
+    color(255, 80, 80),
+    color(100, 200, 255),
+    player.energy / player.maxEnergy,
+  );
   if (boostActive) {
     energyCol = color(90, 220, 140);
   }
@@ -290,7 +306,7 @@ function draw() {
   // Label: Lightning Bolt Icon (Bigger and overlapping the bar)
   push();
   translate(barX + barW - 15, barY + barH / 2); // Positioned to the right of the bar
-  
+
   // Shadow
   fill(0, 0, 0, 80); // Translucent black shadow
   noStroke();
@@ -339,10 +355,10 @@ function draw() {
   textAlign(RIGHT, CENTER); // Center vertically with the bar
   fill(255, 215, 0);
   noStroke();
-  
+
   const starY = barY + barH / 2; // Same vertical center as the energy bar
   text("⭐", width - 45, starY);
-  
+
   fill(40, 40, 50);
   text(player.starsCollected, width - 18, starY + 2); // Slight offset for visual alignment with text baseline
 
@@ -360,7 +376,11 @@ function draw() {
   for (let i = 0; i < checkpointTpTargets.length; i++) {
     const t = checkpointTpTargets[i];
     const btnW = textWidth(t.label) + 20;
-    const hover = mouseX >= tpBtnX && mouseX <= tpBtnX + btnW && mouseY >= tpBtnY && mouseY <= tpBtnY + tpBtnH;
+    const hover =
+      mouseX >= tpBtnX &&
+      mouseX <= tpBtnX + btnW &&
+      mouseY >= tpBtnY &&
+      mouseY <= tpBtnY + tpBtnH;
     if (hover) {
       fill(100, 140, 200);
     } else {
@@ -388,8 +408,12 @@ function draw() {
       alpha = (checkpointMessageTimer / fadeInFrames) * 255;
     } else if (checkpointMessageTimer < fadeInFrames + holdFrames) {
       alpha = 255;
-    } else if (checkpointMessageTimer < fadeInFrames + holdFrames + fadeOutFrames) {
-      const t = (checkpointMessageTimer - fadeInFrames - holdFrames) / fadeOutFrames;
+    } else if (
+      checkpointMessageTimer <
+      fadeInFrames + holdFrames + fadeOutFrames
+    ) {
+      const t =
+        (checkpointMessageTimer - fadeInFrames - holdFrames) / fadeOutFrames;
       alpha = 255 * (1 - t);
     } else {
       checkpointMessage = null;
@@ -491,10 +515,10 @@ function drawRainZone(zone) {
         const phase = (frameCount * rainSpeed + phaseSeed) % rainHeight;
         const y = cloudBottomY + phase;
         const xJitter = ((wx * 11 + d * 19) % 13) - 6;
-        const x = wx + xJitter + (phase * 0.015);
+        const x = wx + xJitter + phase * 0.015;
         const dropH = 9 + (phaseSeed % 4);
         const dropW = 2 + (phaseSeed % 5) * 0.25;
-        const alpha = 120 + (phaseSeed + wx) % 70;
+        const alpha = 120 + ((phaseSeed + wx) % 70);
         fill(200, 220, 240, alpha);
         push();
         translate(x, y);
@@ -546,7 +570,7 @@ function drawLightningZone(zone) {
     if (cx < left - 100 || cx > right + 100) continue;
 
     // Alternate which clouds strike to avoid wall-of-bolts
-    if (i % 2 === (Math.floor(frameCount / cycleFrames) % 2)) continue;
+    if (i % 2 === Math.floor(frameCount / cycleFrames) % 2) continue;
 
     const boltTopY = 82;
     const boltBottomY = 500;
@@ -608,7 +632,7 @@ function checkLightningHit(zone, player) {
   const boltHalfW = 14;
   for (let i = 0; i < cloudBases.length; i++) {
     // Alternate bolts same way as drawLightningZone
-    if (i % 2 === (Math.floor(frameCount / cycleFrames) % 2)) continue;
+    if (i % 2 === Math.floor(frameCount / cycleFrames) % 2) continue;
 
     const cx = cloudBases[i];
     if (Math.abs(player.x - cx) <= boltHalfW + player.r * 0.4) {
@@ -649,7 +673,12 @@ function mousePressed() {
   for (let i = 0; i < checkpointTpTargets.length; i++) {
     const t = checkpointTpTargets[i];
     const btnW = textWidth(t.label) + 20;
-    if (mouseX >= tpBtnX && mouseX <= tpBtnX + btnW && mouseY >= tpBtnY && mouseY <= tpBtnY + tpBtnH) {
+    if (
+      mouseX >= tpBtnX &&
+      mouseX <= tpBtnX + btnW &&
+      mouseY >= tpBtnY &&
+      mouseY <= tpBtnY + tpBtnH
+    ) {
       player.x = t.x;
       player.y = t.y;
       player.vx = 0;

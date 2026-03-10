@@ -4,7 +4,7 @@
     {
       "name": "Howard",
       "theme": {
-        "bg": "#F0F0F0",
+        "bg": "#C1E1ED",
         "platform": "#C8C8C8",
         "blob": "#1478FF"
       },
@@ -14,8 +14,7 @@
       "world": { "w": 13800, "h": 360, "deathY": 560 },
       "start": { "x": 80, "y": 220, "r": 26 },
       "platforms": [
-        
-        { "x": 0, "y": 424, "w":13790, "h": 36, "color": "green" },
+        { "x": 0, "y": 424, "w": 13790, "h": 36, "color": "green" },
         { "x": 520, "y": 354, "w": 90, "h": 12, "color": "orange" },
         { "x": 650, "y": 304, "w": 90, "h": 12, "color": "dodgerblue" },
         { "x": 850, "y": 244, "w": 130, "h": 12, "color": "purple" },
@@ -148,7 +147,12 @@
           "w": 90,
           "h": 14,
           "color": "peru",
-          "options": { "isMoving": true, "rangeY": 25, "speed": 0.02, "reverse": true }
+          "options": {
+            "isMoving": true,
+            "rangeY": 25,
+            "speed": 0.02,
+            "reverse": true
+          }
         },
         {
           "x": 4520,
@@ -160,6 +164,5 @@
         { "x": 13000, "y": 424, "w": 800, "h": 36, "color": "green" }
       ]
     }
-    
   ]
 }
