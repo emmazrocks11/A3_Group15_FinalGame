@@ -236,9 +236,9 @@ class BlobPlayer {
       if (img) {
         push();
         imageMode(CENTER);
-        // Draw sprite sized like the blob but slightly taller and ~5px bigger overall
-        const width = this.r * 2 + 5;
-        const height = this.r * 2.4 + 5;
+        // Draw sprite sized like the blob but slightly taller and ~1cm bigger (≈10px) overall
+        const width = this.r * 2 + 15;
+        const height = this.r * 2.4 + 15;
         translate(this.x, this.y);
         scale(this.facingDir, 1); // flip horizontally when moving left
         image(img, 0, 0, width, height);
