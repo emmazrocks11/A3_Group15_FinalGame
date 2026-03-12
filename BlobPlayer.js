@@ -48,6 +48,7 @@ class BlobPlayer {
     this.animFrame = 0;
     this.animTimer = 0;
     this.animSpeed = 10; // frames per sprite frame
+    this.facingDir = 1; // 1 = right, -1 = left
   }
 
   spawnFromLevel(level) {
@@ -216,6 +217,11 @@ class BlobPlayer {
       this.animTimer = 0;
       this.animFrame = 0;
     }
+
+    // Update facing direction based on horizontal velocity
+    if (Math.abs(this.vx) > 0.1) {
+      this.facingDir = this.vx < 0 ? -1 : 1;
+    }
   }
 
   applyStarEnergyBonus(count) {
@@ -233,7 +239,9 @@ class BlobPlayer {
         // Draw sprite sized like the blob but slightly taller and ~5px bigger overall
         const width = this.r * 2 + 5;
         const height = this.r * 2.4 + 5;
-        image(img, this.x, this.y, width, height);
+        translate(this.x, this.y);
+        scale(this.facingDir, 1); // flip horizontally when moving left
+        image(img, 0, 0, width, height);
         pop();
         return;
       }
