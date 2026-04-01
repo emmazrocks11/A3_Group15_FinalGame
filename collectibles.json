@@ -3,8 +3,11 @@
   "checkpoint": { "x": 4558, "y": 424, "text": "Focus" },
   "checkpoint2": { "x": 8100, "y": 424, "text": "Memory" },
   "checkpoint3": { "x": 13770, "y": 424, "text": null },
-  "rainZone": { "startX": 8300, "endX": 9000 },
-  "lightningZone": { "startX": 9000, "endX": 10800 },
+  "rainZones": [
+    { "startX": 8300, "endX": 9000 },
+    { "startX": 11952, "endX": 13227 }
+  ],
+  "lightningZone": { "startX": 100000, "endX": 10000000 },
   "stars": [
     { "x": 910, "y": 100 },
     { "x": 1700, "y": 210 },

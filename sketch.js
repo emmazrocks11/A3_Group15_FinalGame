@@ -79,7 +79,8 @@ let winScreenCreditsDoneFrame = null;
 let respawnPoint = null;
 let checkpointMessage = null;
 let checkpointMessageTimer = 0;
-let rainZone = null;
+/** @type {{ startX: number, endX: number }[]} */
+let rainZones = [];
 let lightningZone = null;
 let checkpointTpTargets = [];
 let checkpointsDrawOrder = [];
@@ -217,10 +218,16 @@ function loadLevel(i) {
   checkpointMessage = null;
   checkpointMessageTimer = 0;
 
-  if (collectiblesData && collectiblesData.rainZone) {
-    rainZone = collectiblesData.rainZone;
-  } else {
-    rainZone = null;
+  rainZones = [];
+  if (collectiblesData) {
+    if (
+      Array.isArray(collectiblesData.rainZones) &&
+      collectiblesData.rainZones.length
+    ) {
+      rainZones = collectiblesData.rainZones.slice();
+    } else if (collectiblesData.rainZone) {
+      rainZones = [collectiblesData.rainZone];
+    }
   }
 
   if (collectiblesData && collectiblesData.lightningZone) {
@@ -314,10 +321,12 @@ function draw() {
   }
 
   // --- game state ---
-  if (rainZone) {
-    player.inRain = player.x >= rainZone.startX && player.x <= rainZone.endX;
-  } else {
-    player.inRain = false;
+  player.inRain = false;
+  for (const z of rainZones) {
+    if (player.x >= z.startX && player.x <= z.endX) {
+      player.inRain = true;
+      break;
+    }
   }
 
   if (!gameWon) {
@@ -378,7 +387,9 @@ function draw() {
   // --- draw ---
   cam.begin();
   level.drawWorld();
-  if (rainZone) drawRainZone(rainZone);
+  for (const z of rainZones) {
+    drawRainZone(z);
+  }
   if (lightningZone) drawLightningZone(lightningZone);
   for (const cp of checkpointsDrawOrder) {
     cp.draw();
