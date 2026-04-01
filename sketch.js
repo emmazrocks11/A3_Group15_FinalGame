@@ -37,6 +37,7 @@ let grow2Img;
 let daisyImg;
 let splashScreenImg;
 let daisyNameImg;
+let startScreenBuddyImg;
 let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
@@ -76,6 +77,7 @@ function preload() {
   daisyImg = loadImage("assets/images/daisy.png");
   splashScreenImg = loadImage("assets/images/splashscreen.png");
   daisyNameImg = loadImage("assets/images/daisyname.png");
+  startScreenBuddyImg = loadImage("assets/images/startscreenbuddy.png");
 }
 
 function setup() {

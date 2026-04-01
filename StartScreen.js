@@ -14,6 +14,31 @@ function drawSplashBackground() {
   }
 }
 
+/**
+ * Mascot on the splash mountain (right side of art), scaled to read as standing on the ridge.
+ * Size is 2× the previous “one-third” caps (i.e. 2/3 of original 210 / 62% layout).
+ */
+function drawStartScreenBuddy() {
+  if (!startScreenBuddyImg || !startScreenBuddyImg.width) return;
+  const maxW = (210 / 3) * 2;
+  const maxH = ((VIEW_H * 0.62) / 3) * 2;
+  const scale = Math.min(
+    maxW / startScreenBuddyImg.width,
+    maxH / startScreenBuddyImg.height,
+    1
+  );
+  const bw = startScreenBuddyImg.width * scale;
+  const bh = startScreenBuddyImg.height * scale;
+  const padX = 52;
+  const padY = 18;
+  const mountainLift = 108;
+  const cx = VIEW_W - padX - bw / 2;
+  const cy = VIEW_H - padY - bh / 2 - mountainLift;
+  imageMode(CENTER);
+  image(startScreenBuddyImg, cx, cy, bw, bh);
+  imageMode(CORNER);
+}
+
 function drawDaisyNameLogo() {
   if (!daisyNameImg || !daisyNameImg.width) return;
   const maxLogoW = VIEW_W * 0.88;
@@ -160,6 +185,7 @@ function drawCuteBackButton() {
 
 function drawMainMenu() {
   drawSplashBackground();
+  drawStartScreenBuddy();
   drawDaisyNameLogo();
   for (const b of getMainMenuButtons()) {
     const { id, label, ...rect } = b;
