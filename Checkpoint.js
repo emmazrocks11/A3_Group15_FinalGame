@@ -30,6 +30,12 @@ class Checkpoint {
     /** Set false only to skip beam/bud (default: all checkpoints use them) */
     this.useBeamAndGrow = options.useBeamAndGrow !== false;
 
+    /** Last checkpoint: after normal bloom, daisy scales up toward the sky before win. */
+    this.isFinalCheckpoint = options.isFinalCheckpoint === true;
+    this.finalGrowDuration = options.finalGrowDuration ?? 110;
+    this.finalMaxScale = options.finalMaxScale ?? 16;
+    this.finalGrowT = 0;
+
     this.reached = false;
     this.bloomT = 0;
     this.bloomDuration = 52;
@@ -64,7 +70,34 @@ class Checkpoint {
     if (this.reached && this.bloomT < this.bloomDuration) {
       this.bloomT++;
     }
+    if (
+      this.isFinalCheckpoint &&
+      this.reached &&
+      this.bloomT >= this.bloomDuration &&
+      this.finalGrowT < this.finalGrowDuration
+    ) {
+      this.finalGrowT++;
+    }
     return touching && canProgress;
+  }
+
+  /** True when final checkpoint bloom + skyward growth have finished (ready for win screen). */
+  finalSequenceComplete() {
+    if (!this.isFinalCheckpoint) return false;
+    return (
+      this.reached &&
+      this.bloomT >= this.bloomDuration &&
+      this.finalGrowT >= this.finalGrowDuration
+    );
+  }
+
+  /** Draw after the player so the giant daisy reads in front during the finale. */
+  shouldDrawAfterPlayer() {
+    return (
+      this.isFinalCheckpoint &&
+      this.reached &&
+      this.bloomT >= this.bloomDuration
+    );
   }
 
   bloomScale() {
@@ -221,9 +254,24 @@ class Checkpoint {
     }
 
     const s = this.bloomScale();
-    scale(s);
+    let skyMul = 1;
+    if (
+      this.isFinalCheckpoint &&
+      this.reached &&
+      this.bloomT >= this.bloomDuration
+    ) {
+      const gt = constrain(this.finalGrowT / this.finalGrowDuration, 0, 1);
+      const eased = 1 - pow(1 - gt, 2);
+      skyMul = lerp(1, this.finalMaxScale, eased);
+    }
+    scale(s * skyMul);
     if (this.hasDaisyArt()) {
-      const img = this.bloomStageImage();
+      const img =
+        this.isFinalCheckpoint &&
+        this.reached &&
+        this.bloomT >= this.bloomDuration
+          ? this.imgDaisy
+          : this.bloomStageImage();
       if (img) this.drawPlantImage(img);
       else this.drawMatureFlower();
     } else {

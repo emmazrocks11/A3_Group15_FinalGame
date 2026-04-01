@@ -203,6 +203,7 @@ function loadLevel(i) {
     checkpoint3 = new Checkpoint(c3.x, c3.y, c3.text ?? null, {
       prerequisite: checkpoint2,
       images: daisyImages,
+      isFinalCheckpoint: true,
     });
   } else {
     checkpoint3 = null;
@@ -285,6 +286,13 @@ function loadLevel(i) {
   cam.clampToWorld(level.w, level.h);
 }
 
+/** Win-screen Replay / R: reset level and show the start screen (not jump straight in-game). */
+function returnToStartScreen() {
+  loadLevel(levelIndex);
+  gameStarted = false;
+  menuScreen = "main";
+}
+
 function respawnPlayer() {
   if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
     walkSound.stop();
@@ -335,21 +343,33 @@ function draw() {
     }
   }
 
-  if (!gameWon) {
-    player.update(level);
+  const awaitingFinalDaisy =
+    checkpoint3 &&
+    checkpoint3.reached &&
+    !checkpoint3.finalSequenceComplete() &&
+    !gameWon;
 
-    // Lightning strikes every 4 seconds. If hit, invert controls temporarily.
-    if (lightningZone && checkLightningHit(lightningZone, player)) {
-      player.invertTimer = 180; // ~3 seconds
+  if (!gameWon) {
+    if (!awaitingFinalDaisy) {
+      player.update(level);
+
+      // Lightning strikes every 4 seconds. If hit, invert controls temporarily.
+      if (lightningZone && checkLightningHit(lightningZone, player)) {
+        player.invertTimer = 180; // ~3 seconds
+      }
+
+      for (let s of stars) {
+        if (s.update(player)) {
+          totalStarsCollected++;
+          player.applyStarEnergyBonus(player.starsCollected);
+          player.energy = player.maxEnergy;
+          energyBoostTimer = 60;
+        }
+      }
     }
 
-    for (let s of stars) {
-      if (s.update(player)) {
-        totalStarsCollected++;
-        player.applyStarEnergyBonus(player.starsCollected);
-        player.energy = player.maxEnergy;
-        energyBoostTimer = 60;
-      }
+    if (awaitingFinalDaisy && walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+      walkSound.stop();
     }
 
     for (const cp of checkpointsUpdateOrder) {
@@ -367,8 +387,7 @@ function draw() {
       }
     }
 
-    // collectibles.json: checkpoint3 is the third numbered checkpoint (after checkpoint + checkpoint2); win here
-    if (checkpoint3 && checkpoint3.reached) {
+    if (checkpoint3 && checkpoint3.finalSequenceComplete()) {
       gameWon = true;
       winScreenTimer = 0;
       winScreenCreditsDoneFrame = null;
@@ -398,12 +417,16 @@ function draw() {
   }
   if (lightningZone) drawLightningZone(lightningZone);
   for (const cp of checkpointsDrawOrder) {
+    if (cp.shouldDrawAfterPlayer()) continue;
     cp.draw();
   }
   for (let s of stars) {
     s.draw();
   }
   player.draw(level.theme.blob);
+  for (const cp of checkpointsDrawOrder) {
+    if (cp.shouldDrawAfterPlayer()) cp.draw();
+  }
   cam.end();
 
   // HUD - Level Name
@@ -714,7 +737,7 @@ function drawWinScreen() {
     textSize(13);
     textAlign(CENTER, TOP);
     fill(240, 245, 250, 230);
-    text("Press R or tap Replay", VIEW_W / 2, VIEW_H - 96);
+    text("Press R or tap Replay to return to the menu.", VIEW_W / 2, VIEW_H - 96);
     drawCuteGlassButton(getWinScreenReplayRect(), "Replay", 22);
   }
 }
@@ -900,7 +923,11 @@ function keyPressed() {
   }
   if (key === "r" || key === "R") {
     if (gameWon && !winScreenReplayVisible()) return;
-    loadLevel(levelIndex);
+    if (gameWon) {
+      returnToStartScreen();
+    } else {
+      loadLevel(levelIndex);
+    }
   }
   if (key === "c" || key === "C") {
     if (gameStarted) {
@@ -919,7 +946,7 @@ function mousePressed() {
       winScreenReplayVisible() &&
       pointInRect(mouseX, mouseY, getWinScreenReplayRect())
     ) {
-      loadLevel(levelIndex);
+      returnToStartScreen();
     }
     return;
   }
