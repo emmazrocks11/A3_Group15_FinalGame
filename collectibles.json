@@ -4,7 +4,7 @@
   "checkpoint2": { "x": 8100, "y": 424, "text": "Memory" },
   "checkpoint3": { "x": 13770, "y": 424, "text": null },
   "rainZone": { "startX": 8300, "endX": 9000 },
-  "lightningZone": { "startX": 19000, "endX": 110800 },
+  "lightningZone": { "startX": 9000, "endX": 10800 },
   "stars": [
     { "x": 910, "y": 100 },
     { "x": 1700, "y": 210 },

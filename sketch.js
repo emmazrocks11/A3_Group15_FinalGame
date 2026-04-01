@@ -214,17 +214,29 @@ function loadLevel(i) {
     });
   }
   if (lightningZone) {
+    const rawMid = (lightningZone.startX + lightningZone.endX) / 2;
+    const lx = constrain(
+      rawMid,
+      player.r + 4,
+      level.w - player.r - 4,
+    );
+    const groundY = checkpoint2 ? checkpoint2.y - player.r : 424 - player.r;
     checkpointTpTargets.push({
       label: "Lightning",
-      x: (lightningZone.startX + lightningZone.endX) / 2,
-      y: 200,
+      x: lx,
+      y: groundY,
     });
   }
-  // End: teleport to third numbered checkpoint (checkpoint3 in collectibles.json)
+  // End: final checkpoint (same ground Y as JSON anchor)
   if (checkpoint3) {
+    const ex = constrain(
+      checkpoint3.x + 2,
+      player.r + 4,
+      level.w - player.r - 4,
+    );
     checkpointTpTargets.push({
       label: "End",
-      x: checkpoint3.x + 2,
+      x: ex,
       y: checkpoint3.y - player.r,
     });
   }
@@ -808,6 +820,9 @@ function mousePressed() {
   const tpBtnH = 32;
   const tpBtnPad = 8;
   let tpBtnX = 16;
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(11);
   for (let i = 0; i < checkpointTpTargets.length; i++) {
     const t = checkpointTpTargets[i];
     const btnW = textWidth(t.label) + 20;
