@@ -120,8 +120,9 @@ function getMainMenuButtons() {
   const totalH = btnH * 3 + gap * 2;
   const startY = VIEW_H - totalH - 40;
   const btnX = VIEW_W / 2 - btnW / 2;
+  const playLabel = mainMenuPlayLabelReplay ? "Replay" : "Play";
   return [
-    { id: "play", x: btnX, y: startY, w: btnW, h: btnH, label: "Play" },
+    { id: "play", x: btnX, y: startY, w: btnW, h: btnH, label: playLabel },
     {
       id: "instructions",
       x: btnX,
@@ -145,12 +146,6 @@ function getBackButtonRect() {
   const btnW = 140;
   const btnH = 48;
   return { x: 28, y: VIEW_H - 36 - btnH, w: btnW, h: btnH };
-}
-
-/** Same rect as the main menu Play button — win screen Replay sits here. */
-function getWinScreenReplayRect() {
-  const b = getMainMenuButtons()[0];
-  return { x: b.x, y: b.y, w: b.w, h: b.h };
 }
 
 /** Frosted pastel button — same look as Instructions / About Back. */
@@ -374,6 +369,7 @@ function startScreenMousePressed() {
       if (pointInRect(mouseX, mouseY, b)) {
         if (b.id === "play") {
           gameStarted = true;
+          mainMenuPlayLabelReplay = false;
           checkpointMessage = "Balance";
           checkpointMessageTimer = 0;
         } else if (b.id === "instructions") {
@@ -401,6 +397,7 @@ function startScreenKeyPressed() {
     (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW)
   ) {
     gameStarted = true;
+    mainMenuPlayLabelReplay = false;
     checkpointMessage = "Balance";
     checkpointMessageTimer = 0;
     return true;

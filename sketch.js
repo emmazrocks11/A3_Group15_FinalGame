@@ -29,12 +29,13 @@ const WIN_SCREEN_CREDITS = [
   "Emma Zhang",
 ];
 
-/** Win screen: top→bottom scroll (thank-you + credits), then Replay (frames @ ~60fps). */
+/** Win screen: top→bottom scroll (thank-you + credits), then auto-return to main menu. */
 const WIN_SCROLL_SPEED = 2.65;
 /** First line starts above the top edge; reel moves downward. */
 const WIN_CREDITS_REEL_START_Y = -400;
 const WIN_CREDITS_LINE_GAP = 36;
-const WIN_REPLAY_DELAY_FRAMES = 48;
+/** Frames after credits leave the screen before returning to the start menu. */
+const WIN_AUTO_RETURN_AFTER_CREDITS = 40;
 /** Dark overlay alpha (0–255) during credits; fades to 0 over this many frames after credits end. */
 const WIN_OVERLAY_MAX_ALPHA = 115;
 const WIN_OVERLAY_FADE_FRAMES = 55;
@@ -67,6 +68,8 @@ let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
 let gameStarted = false;
+/** After winning, main menu primary button shows “Replay” until they start the game. */
+let mainMenuPlayLabelReplay = false;
 /** @type {"main"|"instructions"|"about"} */
 let menuScreen = "main";
 let energyBoostTimer = 0;
@@ -286,11 +289,12 @@ function loadLevel(i) {
   cam.clampToWorld(level.w, level.h);
 }
 
-/** Win-screen Replay / R: reset level and show the start screen (not jump straight in-game). */
+/** After win: reset level, show start menu, primary button becomes “Replay”. */
 function returnToStartScreen() {
   loadLevel(levelIndex);
   gameStarted = false;
   menuScreen = "main";
+  mainMenuPlayLabelReplay = true;
 }
 
 function respawnPlayer() {
@@ -637,7 +641,15 @@ function draw() {
 
   if (gameWon) {
     drawWinScreen();
-    winScreenTimer++;
+    const autoMenu =
+      winScreenCreditsDoneFrame !== null &&
+      winScreenTimer >=
+        winScreenCreditsDoneFrame + WIN_AUTO_RETURN_AFTER_CREDITS;
+    if (autoMenu) {
+      returnToStartScreen();
+    } else {
+      winScreenTimer++;
+    }
   }
 
   // Reset text settings
@@ -648,18 +660,10 @@ function draw() {
   noStroke();
 }
 
-function winScreenReplayVisible() {
-  return (
-    winScreenCreditsDoneFrame !== null &&
-    winScreenTimer >= winScreenCreditsDoneFrame + WIN_REPLAY_DELAY_FRAMES
-  );
-}
-
 function drawWinScreen() {
   const t = winScreenTimer;
 
   drawSplashBackground();
-  drawStartScreenBuddy();
 
   const scrollOffset = t * WIN_SCROLL_SPEED;
   const reelTop = WIN_CREDITS_REEL_START_Y + scrollOffset;
@@ -729,16 +733,6 @@ function drawWinScreen() {
     textSize(22);
     fill(255, 252, 254);
     text("Thank you for playing", VIEW_W / 2, y);
-  }
-
-  if (winScreenReplayVisible()) {
-    textFont("Inter");
-    textStyle(NORMAL);
-    textSize(13);
-    textAlign(CENTER, TOP);
-    fill(240, 245, 250, 230);
-    text("Press R or tap Replay to return to the menu.", VIEW_W / 2, VIEW_H - 96);
-    drawCuteGlassButton(getWinScreenReplayRect(), "Replay", 22);
   }
 }
 
@@ -922,12 +916,11 @@ function keyPressed() {
     }
   }
   if (key === "r" || key === "R") {
-    if (gameWon && !winScreenReplayVisible()) return;
     if (gameWon) {
       returnToStartScreen();
-    } else {
-      loadLevel(levelIndex);
+      return;
     }
+    loadLevel(levelIndex);
   }
   if (key === "c" || key === "C") {
     if (gameStarted) {
@@ -942,12 +935,6 @@ function mousePressed() {
     return;
   }
   if (gameWon) {
-    if (
-      winScreenReplayVisible() &&
-      pointInRect(mouseX, mouseY, getWinScreenReplayRect())
-    ) {
-      returnToStartScreen();
-    }
     return;
   }
 
