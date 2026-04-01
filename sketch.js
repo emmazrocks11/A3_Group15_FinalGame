@@ -35,10 +35,14 @@ let seedImg;
 let grow1Img;
 let grow2Img;
 let daisyImg;
+let splashScreenImg;
+let daisyNameImg;
 let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
 let gameStarted = false;
+/** @type {"main"|"instructions"|"about"} */
+let menuScreen = "main";
 let energyBoostTimer = 0;
 let checkpoint = null;
 let checkpoint2 = null;
@@ -70,6 +74,8 @@ function preload() {
   grow1Img = loadImage("assets/images/grow1.png");
   grow2Img = loadImage("assets/images/grow2.png");
   daisyImg = loadImage("assets/images/daisy.png");
+  splashScreenImg = loadImage("assets/images/splashscreen.png");
+  daisyNameImg = loadImage("assets/images/daisyname.png");
 }
 
 function setup() {
@@ -668,12 +674,11 @@ function checkLightningHit(zone, player) {
 }
 
 function keyPressed() {
+  if (!gameStarted) {
+    if (startScreenKeyPressed()) return;
+  }
   if (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW) {
-    if (!gameStarted) {
-      gameStarted = true;
-      checkpointMessage = "Balance";
-      checkpointMessageTimer = 0;
-    } else {
+    if (gameStarted) {
       player.registerJumpPress();
     }
   }
@@ -682,11 +687,7 @@ function keyPressed() {
 
 function mousePressed() {
   if (!gameStarted) {
-    if (isPlayButtonClicked(mouseX, mouseY)) {
-      gameStarted = true;
-      checkpointMessage = "Balance";
-      checkpointMessageTimer = 0;
-    }
+    startScreenMousePressed();
     return;
   }
 

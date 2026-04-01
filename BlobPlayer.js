@@ -301,6 +301,16 @@ class BlobPlayer {
       squashY = 1 - strain * 0.07;
     }
 
+    let cuteX = 0;
+    let cuteY = 0;
+    let cuteR = 0;
+    if (!lowEnergy) {
+      const t = frameCount * 0.11;
+      cuteX = sin(t * 1.4) * 2.2 + sin(t * 2.35) * 1.1;
+      cuteY = sin(t * 1.85 + 1.1) * 1.5;
+      cuteR = sin(t * 0.88) * 0.045;
+    }
+
     // If sprite frames exist, use them instead of wobble blob
     if (this.walkFrames && this.walkFrames.length > 0) {
       const img = this.walkFrames[this.animFrame % this.walkFrames.length];
@@ -310,7 +320,8 @@ class BlobPlayer {
         // Draw sprite sized like the blob but slightly taller and ~1cm bigger (≈10px) overall
         const width = this.r * 2 + 15;
         const height = this.r * 2.4 + 15;
-        translate(this.x + ox, this.y + oy);
+        translate(this.x + ox + cuteX, this.y + oy + cuteY);
+        rotate(cuteR);
         scale(this.facingDir, 1); // flip horizontally when moving left
         scale(1, squashY);
         if (lowEnergy) {
@@ -329,7 +340,8 @@ class BlobPlayer {
 
     // Fallback: original blob shape (draw in local space so squash is centered)
     push();
-    translate(this.x + ox, this.y + oy);
+    translate(this.x + ox + cuteX, this.y + oy + cuteY);
+    rotate(cuteR);
     scale(1, squashY);
     const baseCol = color(colHex);
     const tiredCol = color(255, 200, 185);
