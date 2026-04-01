@@ -39,6 +39,10 @@ const WIN_AUTO_RETURN_AFTER_CREDITS = 40;
 /** Dark overlay alpha (0–255) during credits; fades to 0 over this many frames after credits end. */
 const WIN_OVERLAY_MAX_ALPHA = 115;
 const WIN_OVERLAY_FADE_FRAMES = 55;
+/** Blackout over the win screen before switching to the menu (0→255). */
+const WIN_TO_MENU_FADE_OUT_FRAMES = 32;
+/** Start menu fades in from black after the win transition. */
+const MAIN_MENU_FADE_IN_FRAMES = 52;
 
 let allLevelsData;
 let levelIndex = 0;
@@ -82,6 +86,10 @@ let gameWon = false;
 let winScreenTimer = 0;
 /** Frame index when the last credit line scrolled off (null until then). */
 let winScreenCreditsDoneFrame = null;
+/** null = not fading; counts down each frame during win→menu blackout. */
+let winToMenuBlackoutFramesLeft = null;
+/** Counts down while the main menu is covered by a fading black layer. */
+let mainMenuFadeInFramesLeft = 0;
 let respawnPoint = null;
 let checkpointMessage = null;
 let checkpointMessageTimer = 0;
@@ -143,6 +151,8 @@ function loadLevel(i) {
   gameWon = false;
   winScreenTimer = 0;
   winScreenCreditsDoneFrame = null;
+  winToMenuBlackoutFramesLeft = null;
+  mainMenuFadeInFramesLeft = 0;
   level = LevelLoader.fromLevelsJson(allLevelsData, i);
 
   if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
@@ -295,6 +305,7 @@ function returnToStartScreen() {
   gameStarted = false;
   menuScreen = "main";
   mainMenuPlayLabelReplay = true;
+  mainMenuFadeInFramesLeft = MAIN_MENU_FADE_IN_FRAMES;
 }
 
 function respawnPlayer() {
@@ -335,6 +346,19 @@ function draw() {
       lobbyMusic.loop();
     }
     drawStartScreen();
+    if (mainMenuFadeInFramesLeft > 0) {
+      const a = map(
+        mainMenuFadeInFramesLeft,
+        MAIN_MENU_FADE_IN_FRAMES,
+        0,
+        255,
+        0,
+      );
+      fill(0, 0, 0, constrain(a, 0, 255));
+      noStroke();
+      rect(0, 0, VIEW_W, VIEW_H);
+      mainMenuFadeInFramesLeft--;
+    }
     return;
   }
 
@@ -645,9 +669,22 @@ function draw() {
       winScreenCreditsDoneFrame !== null &&
       winScreenTimer >=
         winScreenCreditsDoneFrame + WIN_AUTO_RETURN_AFTER_CREDITS;
-    if (autoMenu) {
-      returnToStartScreen();
-    } else {
+    if (autoMenu && winToMenuBlackoutFramesLeft === null) {
+      winToMenuBlackoutFramesLeft = WIN_TO_MENU_FADE_OUT_FRAMES;
+    }
+    if (winToMenuBlackoutFramesLeft !== null && winToMenuBlackoutFramesLeft > 0) {
+      const N = WIN_TO_MENU_FADE_OUT_FRAMES;
+      const delta = N - winToMenuBlackoutFramesLeft;
+      const top = max(N - 1, 1);
+      fill(0, 0, 0, map(delta, 0, top, 0, 255));
+      noStroke();
+      rect(0, 0, VIEW_W, VIEW_H);
+      winToMenuBlackoutFramesLeft--;
+      if (winToMenuBlackoutFramesLeft === 0) {
+        returnToStartScreen();
+        winToMenuBlackoutFramesLeft = null;
+      }
+    } else if (!autoMenu) {
       winScreenTimer++;
     }
   }
