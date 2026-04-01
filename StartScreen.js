@@ -103,6 +103,18 @@ function getBackButtonRect() {
   return { x: 28, y: VIEW_H - 36 - btnH, w: btnW, h: btnH };
 }
 
+/** Same placement as main menu primary buttons — used on win screen. */
+function getWinScreenPlayAgainRect() {
+  const btnW = 280;
+  const btnH = 48;
+  return {
+    x: VIEW_W / 2 - btnW / 2,
+    y: VIEW_H - 40 - btnH,
+    w: btnW,
+    h: btnH,
+  };
+}
+
 /** Frosted pastel button — same look as Instructions / About Back. */
 function drawCuteGlassButton(r, label, labelSize) {
   const rad = 16;
