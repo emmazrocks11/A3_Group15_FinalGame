@@ -526,21 +526,11 @@ function draw() {
 
 function drawWinScreen() {
   drawSplashBackground();
-  fill(255, 245, 250, 58);
-  noStroke();
-  rect(0, 0, VIEW_W, VIEW_H);
-
   drawStartScreenBuddy();
   drawDaisyNameLogo();
 
-  const panelX = 60;
-  const panelY = 158;
-  const panelW = VIEW_W - 120;
-  const panelH = 188;
-  drawCuteGlassPanel(panelX, panelY, panelW, panelH);
-  drawCuteSparkles(panelX, panelY, panelW, panelH);
-
-  drawCuteTitle("You Win!", VIEW_W / 2, panelY + 28);
+  const titleY = 212;
+  drawCuteTitle("You Win!", VIEW_W / 2, titleY);
 
   textFont("Inter");
   textStyle(NORMAL);
@@ -549,10 +539,10 @@ function drawWinScreen() {
   textLeading(24);
   noStroke();
   fill(32, 28, 38);
-  text("Thanks for playing Daisy.", VIEW_W / 2, panelY + 78);
-  text("Press R or tap the button below to play again.", VIEW_W / 2, panelY + 104);
+  text("Thanks for playing Daisy.", VIEW_W / 2, titleY + 44);
+  text("Press R or tap Replay.", VIEW_W / 2, titleY + 68);
 
-  drawCuteGlassButton(getWinScreenPlayAgainRect(), "Play again (R)", 20);
+  drawCuteGlassButton(getWinScreenReplayRect(), "Replay", 22);
 }
 
 function drawRainZone(zone) {
@@ -743,7 +733,7 @@ function mousePressed() {
     return;
   }
   if (gameWon) {
-    if (pointInRect(mouseX, mouseY, getWinScreenPlayAgainRect())) {
+    if (pointInRect(mouseX, mouseY, getWinScreenReplayRect())) {
       loadLevel(levelIndex);
     }
     return;
