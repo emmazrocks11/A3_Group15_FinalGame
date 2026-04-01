@@ -24,7 +24,7 @@ const WIN_SCREEN_CREDITS = [
   "Rose Chen",
   "Cherry Ke",
   "Kaitlyn Subacharoen",
-  "Caitlyn Tan4",
+  "Caitlyn Tan",
   "Olivia Yip",
   "Emma Zhang",
 ];
@@ -33,7 +33,7 @@ const WIN_SCREEN_CREDITS = [
 const WIN_SCROLL_SPEED = 2.65;
 /** First line starts above the top edge; reel moves downward. */
 const WIN_CREDITS_REEL_START_Y = -400;
-const WIN_CREDITS_LINE_GAP = 28;
+const WIN_CREDITS_LINE_GAP = 36;
 const WIN_REPLAY_DELAY_FRAMES = 48;
 /** Dark overlay alpha (0–255) during credits; fades to 0 over this many frames after credits end. */
 const WIN_OVERLAY_MAX_ALPHA = 115;
@@ -670,17 +670,17 @@ function drawWinScreen() {
 
     textFont("Inter");
     textStyle(NORMAL);
-    textSize(14);
+    textSize(18);
     fill(240, 245, 250);
     for (let i = 0; i < WIN_SCREEN_CREDITS.length; i++) {
       text(WIN_SCREEN_CREDITS[i], VIEW_W / 2, y);
       y += WIN_CREDITS_LINE_GAP;
     }
     y += 10;
-    textSize(12);
+    textSize(16);
     fill(200, 210, 225);
     text("Created by:", VIEW_W / 2, y);
-    y += 22;
+    y += 28;
     y += 10;
 
     if (daisyNameImg && daisyNameImg.width) {
