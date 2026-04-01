@@ -1,7 +1,6 @@
 /**
- * Sunflower checkpoint: every instance uses the same visuals until touched —
- * ground aura, light beam to the sun, and an ungrown bud — then scales into
- * the full flower. Optional prerequisite gates bloom/respawn order.
+ * Daisy checkpoint: seed on the ground with beam until touched, then grow1 → grow2 → daisy.
+ * Optional prerequisite gates bloom/respawn order.
  */
 class Checkpoint {
   constructor(x, y, text = "Checkpoint", options = {}) {
@@ -10,8 +9,19 @@ class Checkpoint {
     this.text = text;
     this.messageShown = false;
     this.stemH = 44;
-    this.headY = -this.stemH;
-    this.hitR = 24;
+    this.hitR = 30;
+
+    const imgs = options.images || {};
+    this.imgSeed = imgs.seed ?? null;
+    this.imgGrow1 = imgs.grow1 ?? null;
+    this.imgGrow2 = imgs.grow2 ?? null;
+    this.imgDaisy = imgs.daisy ?? null;
+
+    this.plantDrawW = 78;
+    /** Nudge sprite art downward (screen Y+) from anchor */
+    this.plantYOffset = 30;
+    /** Collision center follows art (base -42 + plantYOffset) */
+    this.headY = -42 + this.plantYOffset;
 
     /** Must be reached first (its flower bloomed) before this one can bloom or count for respawn */
     this.prerequisite = options.prerequisite ?? null;
@@ -27,6 +37,16 @@ class Checkpoint {
 
   prerequisiteMet() {
     return !this.prerequisite || this.prerequisite.reached;
+  }
+
+  hasDaisyArt() {
+    return (
+      this.imgSeed &&
+      this.imgGrow1 &&
+      this.imgGrow2 &&
+      this.imgDaisy &&
+      this.imgSeed.width > 0
+    );
   }
 
   update(player) {
@@ -50,6 +70,24 @@ class Checkpoint {
     const t = constrain(this.bloomT / this.bloomDuration, 0, 1);
     const eased = 1 - pow(1 - t, 3);
     return lerp(0.18, 1, eased);
+  }
+
+  /** Which image to show while blooming (after touch, before fully open). */
+  bloomStageImage() {
+    const t = constrain(this.bloomT / this.bloomDuration, 0, 1);
+    if (t < 1 / 3) return this.imgGrow1;
+    if (t < 2 / 3) return this.imgGrow2;
+    return this.imgDaisy;
+  }
+
+  drawPlantImage(img) {
+    if (!img || !img.width) return;
+    push();
+    imageMode(CENTER);
+    const w = this.plantDrawW;
+    const h = (img.height / img.width) * w;
+    image(img, 0, -h / 2 + this.plantYOffset, w, h);
+    pop();
   }
 
   drawLightBeamAndSun() {
@@ -159,7 +197,11 @@ class Checkpoint {
     translate(this.x, this.y);
 
     if (!this.useBeamAndGrow) {
-      this.drawMatureFlower();
+      if (this.hasDaisyArt() && this.imgDaisy) {
+        this.drawPlantImage(this.imgDaisy);
+      } else {
+        this.drawMatureFlower();
+      }
       pop();
       return;
     }
@@ -167,14 +209,24 @@ class Checkpoint {
     if (!this.reached) {
       this.drawLightBeamAndSun();
       this.drawGroundAura();
-      this.drawBud();
+      if (this.hasDaisyArt() && this.imgSeed) {
+        this.drawPlantImage(this.imgSeed);
+      } else {
+        this.drawBud();
+      }
       pop();
       return;
     }
 
     const s = this.bloomScale();
     scale(s);
-    this.drawMatureFlower();
+    if (this.hasDaisyArt()) {
+      const img = this.bloomStageImage();
+      if (img) this.drawPlantImage(img);
+      else this.drawMatureFlower();
+    } else {
+      this.drawMatureFlower();
+    }
     pop();
   }
 }

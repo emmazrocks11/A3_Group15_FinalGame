@@ -31,6 +31,10 @@ let groundImg;
 let jumpSound;
 let walk1Img;
 let walk2Img;
+let seedImg;
+let grow1Img;
+let grow2Img;
+let daisyImg;
 let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
@@ -62,6 +66,10 @@ function preload() {
   // Load blob walk animation frames
   walk1Img = loadImage("assets/images/walk1.png");
   walk2Img = loadImage("assets/images/walk2.png");
+  seedImg = loadImage("assets/images/seed.png");
+  grow1Img = loadImage("assets/images/grow1.png");
+  grow2Img = loadImage("assets/images/grow2.png");
+  daisyImg = loadImage("assets/images/daisy.png");
 }
 
 function setup() {
@@ -92,10 +100,19 @@ function loadLevel(i) {
     }
   }
 
-  // Each uses Checkpoint.js: ungrown bud + sun beam until touched, then bloom (useBeamAndGrow on by default).
+  const daisyImages = {
+    seed: seedImg,
+    grow1: grow1Img,
+    grow2: grow2Img,
+    daisy: daisyImg,
+  };
+
+  // Checkpoint.js: seed + beam until touched, then grow1 → grow2 → daisy.
   if (collectiblesData && collectiblesData.startCheckpoint) {
     const s = collectiblesData.startCheckpoint;
-    startCheckpoint = new Checkpoint(s.x, s.y, s.text || null);
+    startCheckpoint = new Checkpoint(s.x, s.y, s.text || null, {
+      images: daisyImages,
+    });
   } else {
     startCheckpoint = null;
   }
@@ -104,6 +121,7 @@ function loadLevel(i) {
     const c = collectiblesData.checkpoint;
     checkpoint = new Checkpoint(c.x, c.y, c.text || "Checkpoint", {
       prerequisite: startCheckpoint,
+      images: daisyImages,
     });
   } else {
     checkpoint = null;
@@ -113,6 +131,7 @@ function loadLevel(i) {
     const c2 = collectiblesData.checkpoint2;
     checkpoint2 = new Checkpoint(c2.x, c2.y, c2.text || "Checkpoint", {
       prerequisite: checkpoint,
+      images: daisyImages,
     });
   } else {
     checkpoint2 = null;
