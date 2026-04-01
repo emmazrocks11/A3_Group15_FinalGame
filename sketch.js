@@ -58,6 +58,8 @@ let lightningZone = null;
 let checkpointTpTargets = [];
 let checkpointsDrawOrder = [];
 let checkpointsUpdateOrder = [];
+/** World position readout (toggle with C or the XY button). */
+let showCoordsHud = true;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -423,6 +425,46 @@ function draw() {
   fill(40, 40, 50);
   text(player.starsCollected, width - 18, starY + 2); // Slight offset for visual alignment with text baseline
 
+  // World coordinates + toggle (top-right, below star row)
+  const coordBtnW = 44;
+  const coordBtnH = 22;
+  const coordBtnX = width - coordBtnW - 8;
+  const coordBtnY = starY + 22;
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(11);
+  textAlign(CENTER, CENTER);
+  noStroke();
+  if (
+    mouseX >= coordBtnX &&
+    mouseX <= coordBtnX + coordBtnW &&
+    mouseY >= coordBtnY &&
+    mouseY <= coordBtnY + coordBtnH
+  ) {
+    fill(100, 140, 200);
+  } else {
+    fill(70, 90, 130);
+  }
+  stroke(50, 70, 100);
+  strokeWeight(1);
+  rect(coordBtnX, coordBtnY, coordBtnW, coordBtnH, 6);
+  fill(255);
+  noStroke();
+  text(showCoordsHud ? "hide" : "XY", coordBtnX + coordBtnW / 2, coordBtnY + coordBtnH / 2);
+
+  if (showCoordsHud) {
+    textAlign(RIGHT, TOP);
+    textSize(12);
+    fill(40, 40, 50);
+    const cx = nf(player.x, 0, 1);
+    const cy = nf(player.y, 0, 1);
+    text(`x: ${cx}`, width - 16, coordBtnY + coordBtnH + 6);
+    text(`y: ${cy}`, width - 16, coordBtnY + coordBtnH + 22);
+    textSize(10);
+    fill(100, 100, 115);
+    text("C toggles", width - 16, coordBtnY + coordBtnH + 40);
+  }
+
   // Debug: teleport to checkpoint buttons (testing only)
   const tpBtnY = height - 44;
   const tpBtnH = 32;
@@ -713,11 +755,33 @@ function keyPressed() {
     }
   }
   if (key === "r" || key === "R") loadLevel(levelIndex);
+  if (key === "c" || key === "C") {
+    if (gameStarted) {
+      showCoordsHud = !showCoordsHud;
+    }
+  }
 }
 
 function mousePressed() {
   if (!gameStarted) {
     startScreenMousePressed();
+    return;
+  }
+
+  const barY = 50;
+  const barH = 20;
+  const starY = barY + barH / 2;
+  const coordBtnW = 44;
+  const coordBtnH = 22;
+  const coordBtnX = width - coordBtnW - 8;
+  const coordBtnY = starY + 22;
+  if (
+    mouseX >= coordBtnX &&
+    mouseX <= coordBtnX + coordBtnW &&
+    mouseY >= coordBtnY &&
+    mouseY <= coordBtnY + coordBtnH
+  ) {
+    showCoordsHud = !showCoordsHud;
     return;
   }
 

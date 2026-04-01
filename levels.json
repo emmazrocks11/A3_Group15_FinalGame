@@ -127,23 +127,11 @@
           "color": "darkslategray"
         },
 
-        { "x": 8320, "y": 410, "w": 160, "h": 14, "color": "coral" },
-        {
-          "x": 8520,
-          "y": 368,
-          "w": 100,
-          "h": 12,
-          "color": "orchid",
-          "options": {
-            "isDisappearing": true,
-            "randomBlink": true,
-            "minVisibleFrames": 40,
-            "maxVisibleFrames": 120,
-            "minHiddenFrames": 314,
-            "maxHiddenFrames": 675,
-            "fadeFrames": 10
-          }
-        },
+        { "x": 8320, "y": 410, "w": 100, "h": 12, "color": "coral" },
+        
+        {"x": 8430, "y": 385, "w": 100, "h": 12, "color": "orchid"},
+        {"x": 8540, "y": 370, "w": 100, "h": 12, "color": "orchid"},
+
         {
           "x": 8720,
           "y": 328,
