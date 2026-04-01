@@ -49,7 +49,9 @@ let menuScreen = "main";
 let energyBoostTimer = 0;
 let checkpoint = null;
 let checkpoint2 = null;
+let checkpoint3 = null;
 let startCheckpoint = null;
+let gameWon = false;
 let respawnPoint = null;
 let checkpointMessage = null;
 let checkpointMessageTimer = 0;
@@ -102,6 +104,7 @@ function setup() {
 }
 
 function loadLevel(i) {
+  gameWon = false;
   level = LevelLoader.fromLevelsJson(allLevelsData, i);
 
   if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
@@ -160,14 +163,26 @@ function loadLevel(i) {
     checkpoint2 = null;
   }
 
+  if (collectiblesData && collectiblesData.checkpoint3) {
+    const c3 = collectiblesData.checkpoint3;
+    checkpoint3 = new Checkpoint(c3.x, c3.y, c3.text ?? null, {
+      prerequisite: checkpoint2,
+      images: daisyImages,
+    });
+  } else {
+    checkpoint3 = null;
+  }
+
   checkpointsDrawOrder = [];
   if (startCheckpoint) checkpointsDrawOrder.push(startCheckpoint);
   if (checkpoint) checkpointsDrawOrder.push(checkpoint);
   if (checkpoint2) checkpointsDrawOrder.push(checkpoint2);
+  if (checkpoint3) checkpointsDrawOrder.push(checkpoint3);
 
   checkpointsUpdateOrder = [];
   if (checkpoint) checkpointsUpdateOrder.push(checkpoint);
   if (checkpoint2) checkpointsUpdateOrder.push(checkpoint2);
+  if (checkpoint3) checkpointsUpdateOrder.push(checkpoint3);
   if (startCheckpoint) checkpointsUpdateOrder.push(startCheckpoint);
 
   respawnPoint = null;
@@ -187,25 +202,13 @@ function loadLevel(i) {
   }
 
   checkpointTpTargets = [];
-  const sunflowerTpOrder = [
-    startCheckpoint,
-    checkpoint,
-    checkpoint2,
-  ];
+  const sunflowerTpOrder = [startCheckpoint, checkpoint, checkpoint2];
   for (const cp of sunflowerTpOrder) {
     if (!cp) continue;
     checkpointTpTargets.push({
       label: cp.text || "Checkpoint",
       x: cp.x + 2,
-      y: cp.y - 26,
-    });
-  }
-  // TP to end of map (platform at x 13000–13800) — before Lightning so End stays on-screen
-  if (level && level.w) {
-    checkpointTpTargets.push({
-      label: "poo",
-      x: 15000,
-      y: 398,
+      y: cp.y - player.r,
     });
   }
   if (lightningZone) {
@@ -213,6 +216,14 @@ function loadLevel(i) {
       label: "Lightning",
       x: (lightningZone.startX + lightningZone.endX) / 2,
       y: 200,
+    });
+  }
+  // End: teleport to third numbered checkpoint (checkpoint3 in collectibles.json)
+  if (checkpoint3) {
+    checkpointTpTargets.push({
+      label: "End",
+      x: checkpoint3.x + 2,
+      y: checkpoint3.y - player.r,
     });
   }
 
@@ -269,40 +280,51 @@ function draw() {
     player.inRain = false;
   }
 
-  player.update(level);
+  if (!gameWon) {
+    player.update(level);
 
-  // Lightning strikes every 4 seconds. If hit, invert controls temporarily.
-  if (lightningZone && checkLightningHit(lightningZone, player)) {
-    player.invertTimer = 180; // ~3 seconds
-  }
-
-  for (let s of stars) {
-    if (s.update(player)) {
-      totalStarsCollected++;
-      player.applyStarEnergyBonus(player.starsCollected);
-      player.energy = player.maxEnergy;
-      energyBoostTimer = 60;
+    // Lightning strikes every 4 seconds. If hit, invert controls temporarily.
+    if (lightningZone && checkLightningHit(lightningZone, player)) {
+      player.invertTimer = 180; // ~3 seconds
     }
-  }
 
-  for (const cp of checkpointsUpdateOrder) {
-    if (!cp.update(player)) continue;
-    respawnPoint = { x: cp.x + 2, y: cp.y - player.r };
-    if (
-      cp !== startCheckpoint &&
-      cp.text &&
-      !cp.messageShown
-    ) {
-      cp.messageShown = true;
-      checkpointMessage = cp.text;
-      checkpointMessageTimer = 0;
+    for (let s of stars) {
+      if (s.update(player)) {
+        totalStarsCollected++;
+        player.applyStarEnergyBonus(player.starsCollected);
+        player.energy = player.maxEnergy;
+        energyBoostTimer = 60;
+      }
     }
-  }
 
-  // Fall death → respawn (preserve stars)
-  if (player.y - player.r > level.deathY) {
-    respawnPlayer();
-    return;
+    for (const cp of checkpointsUpdateOrder) {
+      if (!cp.update(player)) continue;
+      respawnPoint = { x: cp.x + 2, y: cp.y - player.r };
+      if (
+        cp !== startCheckpoint &&
+        cp !== checkpoint3 &&
+        cp.text &&
+        !cp.messageShown
+      ) {
+        cp.messageShown = true;
+        checkpointMessage = cp.text;
+        checkpointMessageTimer = 0;
+      }
+    }
+
+    if (checkpoint3 && checkpoint3.reached) {
+      gameWon = true;
+      checkpointMessage = null;
+      if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+        walkSound.stop();
+      }
+    }
+
+    // Fall death → respawn (preserve stars)
+    if (player.y - player.r > level.deathY) {
+      respawnPlayer();
+      return;
+    }
   }
 
   // --- view state (data-driven smoothing) ---
@@ -318,7 +340,6 @@ function draw() {
   for (const cp of checkpointsDrawOrder) {
     cp.draw();
   }
-  drawEndHouse(13770); // small house centered at end
   for (let s of stars) {
     s.draw();
   }
@@ -491,6 +512,10 @@ function draw() {
     }
   }
 
+  if (gameWon) {
+    drawWinScreen();
+  }
+
   // Reset text settings
   textAlign(LEFT, TOP);
   textFont("Inter");
@@ -499,38 +524,35 @@ function draw() {
   noStroke();
 }
 
-function drawEndHouse(centerX) {
-  const groundY = 424;
-  const houseW = 50;
-  const houseH = 70;
-  const x = centerX - houseW / 2; // center house at given x
-  const baseY = groundY - houseH;
-
-  // Only draw when in view
-  if (x + houseW < cam.x - 50 || x > cam.x + width + 50) return;
-
+function drawWinScreen() {
+  drawSplashBackground();
+  fill(255, 245, 250, 58);
   noStroke();
+  rect(0, 0, VIEW_W, VIEW_H);
 
-  // Body (cream/white)
-  fill(245, 240, 230);
-  rect(x, baseY, houseW, houseH);
+  drawStartScreenBuddy();
+  drawDaisyNameLogo();
 
-  // Roof (brown)
-  fill(120, 85, 60);
-  triangle(x - 4, baseY, x + houseW / 2, baseY - 28, x + houseW + 4, baseY);
+  const panelX = 60;
+  const panelY = 158;
+  const panelW = VIEW_W - 120;
+  const panelH = 188;
+  drawCuteGlassPanel(panelX, panelY, panelW, panelH);
+  drawCuteSparkles(panelX, panelY, panelW, panelH);
 
-  // Door (brown)
-  fill(100, 70, 50);
-  rect(x + houseW / 2 - 8, baseY + houseH - 32, 16, 32, 2);
+  drawCuteTitle("You Win!", VIEW_W / 2, panelY + 28);
 
-  // Window
-  fill(200, 230, 255);
-  rect(x + 8, baseY + 18, 14, 14, 2);
-  stroke(80, 60, 45);
-  strokeWeight(1);
-  line(x + 15, baseY + 18, x + 15, baseY + 32);
-  line(x + 8, baseY + 25, x + 22, baseY + 25);
+  textFont("Inter");
+  textStyle(NORMAL);
+  textAlign(CENTER, TOP);
+  textSize(15);
+  textLeading(24);
   noStroke();
+  fill(32, 28, 38);
+  text("Thanks for playing Daisy.", VIEW_W / 2, panelY + 78);
+  text("Press R or tap the button below to play again.", VIEW_W / 2, panelY + 104);
+
+  drawCuteGlassButton(getWinScreenPlayAgainRect(), "Play again (R)", 20);
 }
 
 function drawRainZone(zone) {
@@ -708,7 +730,7 @@ function keyPressed() {
     if (startScreenKeyPressed()) return;
   }
   if (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW) {
-    if (gameStarted) {
+    if (gameStarted && !gameWon) {
       player.registerJumpPress();
     }
   }
@@ -718,6 +740,12 @@ function keyPressed() {
 function mousePressed() {
   if (!gameStarted) {
     startScreenMousePressed();
+    return;
+  }
+  if (gameWon) {
+    if (pointInRect(mouseX, mouseY, getWinScreenPlayAgainRect())) {
+      loadLevel(levelIndex);
+    }
     return;
   }
 
