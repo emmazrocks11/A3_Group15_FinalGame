@@ -56,6 +56,9 @@ class BlobPlayer {
     this.animTimer = 0;
     this.animSpeed = 10; // frames per sprite frame
     this.facingDir = 1; // 1 = right, -1 = left
+
+    this._intentMove = 0;
+    this._appliedMove = 0;
   }
 
   spawnFromLevel(level) {
@@ -206,6 +209,9 @@ class BlobPlayer {
     this.vx *= this.onGround ? this.frictionGround : this.frictionAir;
     this.vx = constrain(this.vx, -effectiveMaxRun, effectiveMaxRun);
 
+    this._intentMove = rawMove;
+    this._appliedMove = move;
+
     this.vy += this.gravity;
 
     // collider box
@@ -286,30 +292,42 @@ class BlobPlayer {
     this.maxEnergy = this.baseMaxEnergy + count * bonusPerStar;
   }
 
+  /**
+   * Cartoon sweat bubbles when input lags behind intent or jump is “stuck” in the queue.
+   */
+  drawSweatBubbles(cx, cy, strain) {
+    const n = 5;
+    const headTop = cy - this.r * 1.15;
+    const intensity = constrain(strain, 0.1, 1);
+    for (let i = 0; i < n; i++) {
+      const seed = i * 401 + floor(cx * 0.07);
+      const t = (frameCount + seed) * 0.11;
+      const side = (i % 2 === 0 ? -1 : 1) * (8 + i * 2.5);
+      const bob = sin(t + i * 0.7) * 1.8;
+      const rise = (frameCount * (1.1 + intensity * 0.9) + seed * 6) % 42;
+      const x = cx + side + bob * 0.4;
+      const y = headTop - rise * 0.85;
+      const br = 2.2 + intensity * 1.4 + (i % 2) * 0.6;
+      const fade = constrain(255 - rise * 4.5, 90, 255);
+      fill(175, 218, 255, fade);
+      stroke(90, 165, 235, fade * 0.6);
+      strokeWeight(1);
+      ellipse(x, y, br * 2, br * 2.15);
+      noStroke();
+      fill(210, 238, 255, fade * 0.75);
+      ellipse(x - br * 0.35, y - br * 0.3, br * 0.45, br * 0.42);
+    }
+  }
+
   draw(colHex) {
     const strain = this.movementStrain();
-    const lowEnergy = strain > 0.08;
-    let ox = 0;
-    let oy = 0;
-    let squashY = 1;
-    if (lowEnergy) {
-      const amp = strain * 3.2;
-      ox =
-        sin(frameCount * 0.38) * amp +
-        sin(frameCount * 0.13) * amp * 0.35;
-      oy = cos(frameCount * 0.31) * amp * 0.55;
-      squashY = 1 - strain * 0.07;
-    }
+    const sweatActive =
+      strain > 0.05 &&
+      (this._intentMove !== this._appliedMove ||
+        this.jumpPressQueue.length > 0);
 
-    let cuteX = 0;
-    let cuteY = 0;
-    let cuteR = 0;
-    if (!lowEnergy) {
-      const t = frameCount * 0.11;
-      cuteX = sin(t * 1.4) * 2.2 + sin(t * 2.35) * 1.1;
-      cuteY = sin(t * 1.85 + 1.1) * 1.5;
-      cuteR = sin(t * 0.88) * 0.045;
-    }
+    const px = this.x;
+    const py = this.y;
 
     // If sprite frames exist, use them instead of wobble blob
     if (this.walkFrames && this.walkFrames.length > 0) {
@@ -320,32 +338,21 @@ class BlobPlayer {
         // Draw sprite sized like the blob but slightly taller and ~1cm bigger (≈10px) overall
         const width = this.r * 2 + 15;
         const height = this.r * 2.4 + 15;
-        translate(this.x + ox + cuteX, this.y + oy + cuteY);
-        rotate(cuteR);
+        translate(px, py);
         scale(this.facingDir, 1); // flip horizontally when moving left
-        scale(1, squashY);
-        if (lowEnergy) {
-          tint(
-            lerp(255, 252, strain),
-            lerp(255, 178, strain),
-            lerp(255, 168, strain),
-          );
-        }
         image(img, 0, 0, width, height);
-        noTint();
         pop();
+        if (sweatActive) {
+          this.drawSweatBubbles(px, py, strain);
+        }
         return;
       }
     }
 
     // Fallback: original blob shape (draw in local space so squash is centered)
     push();
-    translate(this.x + ox + cuteX, this.y + oy + cuteY);
-    rotate(cuteR);
-    scale(1, squashY);
-    const baseCol = color(colHex);
-    const tiredCol = color(255, 200, 185);
-    fill(lowEnergy ? lerpColor(baseCol, tiredCol, strain) : baseCol);
+    translate(px, py);
+    fill(color(colHex));
     noStroke();
     beginShape();
     for (let i = 0; i < this.points; i++) {
@@ -360,6 +367,10 @@ class BlobPlayer {
     }
     endShape(CLOSE);
     pop();
+
+    if (sweatActive) {
+      this.drawSweatBubbles(px, py, strain);
+    }
   }
 
   static overlap(a, b) {
