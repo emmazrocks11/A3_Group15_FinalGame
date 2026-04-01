@@ -1,5 +1,5 @@
 class BlobPlayer {
-  constructor(jumpSound, walkFrames) {
+  constructor(jumpSound, walkFrames, walkSound) {
     this.x = 0;
     this.y = 0;
     this.r = 26;
@@ -49,6 +49,7 @@ class BlobPlayer {
     // Status effects
     this.invertTimer = 0; // frames remaining for inverted left/right
     this.jumpSound = jumpSound;
+    this.walkSound = walkSound;
 
     // Sprite animation
     this.walkFrames = walkFrames || [];
@@ -284,6 +285,20 @@ class BlobPlayer {
     // Update facing direction based on horizontal velocity
     if (Math.abs(this.vx) > 0.1) {
       this.facingDir = this.vx < 0 ? -1 : 1;
+    }
+
+    if (this.walkSound) {
+      const walking =
+        this.onGround &&
+        (Math.abs(this.vx) > 0.1 || Math.abs(this._appliedMove) > 0);
+      if (walking) {
+        this.walkSound.setVolume(1);
+        if (!this.walkSound.isPlaying()) {
+          this.walkSound.loop();
+        }
+      } else if (this.walkSound.isPlaying()) {
+        this.walkSound.stop();
+      }
     }
   }
 

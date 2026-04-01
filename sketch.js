@@ -29,6 +29,8 @@ let skyImg;
 let mountainImg;
 let groundImg;
 let jumpSound;
+let walkSound;
+let lobbyMusic;
 let walk1Img;
 let walk2Img;
 let seedImg;
@@ -68,6 +70,8 @@ function preload() {
   groundImg = loadImage("assets/images/ground.png");
   // Load jump sound effect
   jumpSound = loadSound("assets/sounds/jumpsound.mp3");
+  walkSound = loadSound("assets/sounds/walk.mp3");
+  lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   // Load blob walk animation frames
   walk1Img = loadImage("assets/images/walk1.png");
   walk2Img = loadImage("assets/images/walk2.png");
@@ -85,6 +89,14 @@ function setup() {
   textFont("Inter");
   textSize(14);
 
+  // Walking SFX at 2× speed (jump uses default 1×)
+  if (walkSound && typeof walkSound.rate === "function") {
+    walkSound.rate(2);
+  }
+  if (jumpSound && typeof jumpSound.setVolume === "function") {
+    jumpSound.setVolume(0.8);
+  }
+
   cam = new Camera2D(width, height);
   loadLevel(levelIndex);
 }
@@ -92,7 +104,10 @@ function setup() {
 function loadLevel(i) {
   level = LevelLoader.fromLevelsJson(allLevelsData, i);
 
-  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img]);
+  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+    walkSound.stop();
+  }
+  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
   player.spawnFromLevel(level);
 
   const dropHeight = 220;
@@ -207,7 +222,10 @@ function loadLevel(i) {
 }
 
 function respawnPlayer() {
-  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img]);
+  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+    walkSound.stop();
+  }
+  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
   if (respawnPoint) {
     const dropHeight = 220;
     player.spawnAt(respawnPoint.x, respawnPoint.y - dropHeight);
@@ -229,7 +247,17 @@ function respawnPlayer() {
 function draw() {
   background(200, 220, 255);
 
+  if (gameStarted && lobbyMusic && lobbyMusic.isPlaying()) {
+    lobbyMusic.stop();
+  }
+
   if (!gameStarted) {
+    if (lobbyMusic && !lobbyMusic.isPlaying()) {
+      if (typeof lobbyMusic.setVolume === "function") {
+        lobbyMusic.setVolume(0.45);
+      }
+      lobbyMusic.loop();
+    }
     drawStartScreen();
     return;
   }
