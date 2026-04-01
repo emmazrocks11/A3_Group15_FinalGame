@@ -9,7 +9,8 @@ class Checkpoint {
     this.text = text;
     this.messageShown = false;
     this.stemH = 44;
-    this.hitR = 30;
+    /** Player activates bloom / respawn when their center is within this distance of the plant center (px). */
+    this.triggerRadius = 92;
 
     const imgs = options.images || {};
     this.imgSeed = imgs.seed ?? null;
@@ -52,7 +53,8 @@ class Checkpoint {
   update(player) {
     const centerY = this.y + this.headY;
     const touching =
-      dist(player.x, player.y, this.x, centerY) < player.r + this.hitR;
+      dist(player.x, player.y, this.x, centerY) <
+      player.r + this.triggerRadius;
     const canProgress = this.prerequisiteMet();
 
     if (touching && !this.reached && canProgress) {
