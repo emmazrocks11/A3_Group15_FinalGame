@@ -360,6 +360,28 @@ function respawnPlayer() {
   cam.clampToWorld(level.w, level.h);
 }
 
+/**
+ * Start menu music when the Web Audio context is running.
+ * On first load the context is suspended until a user gesture — see unlockAudioAndStartLobbyMusic().
+ */
+function tryStartLobbyMusic() {
+  if (gameStarted || !lobbyMusic) return;
+  if (lobbyMusic.isPlaying && lobbyMusic.isPlaying()) return;
+  if (typeof lobbyMusic.setVolume === "function") {
+    lobbyMusic.setVolume(0.45);
+  }
+  lobbyMusic.loop();
+}
+
+/** Chrome/Safari/Firefox require a click/tap/key before audio; p5 resumes the AudioContext here. */
+function unlockAudioAndStartLobbyMusic() {
+  if (typeof userStartAudio === "function") {
+    userStartAudio().then(() => tryStartLobbyMusic());
+  } else {
+    tryStartLobbyMusic();
+  }
+}
+
 function draw() {
   background(200, 220, 255);
 
@@ -368,12 +390,7 @@ function draw() {
   }
 
   if (!gameStarted) {
-    if (lobbyMusic && !lobbyMusic.isPlaying()) {
-      if (typeof lobbyMusic.setVolume === "function") {
-        lobbyMusic.setVolume(0.45);
-      }
-      lobbyMusic.loop();
-    }
+    tryStartLobbyMusic();
     drawStartScreen();
     if (mainMenuFadeInFramesLeft > 0) {
       const a = map(
@@ -974,6 +991,7 @@ function checkLightningHit(zone, player) {
 
 function keyPressed() {
   if (!gameStarted) {
+    unlockAudioAndStartLobbyMusic();
     if (startScreenKeyPressed()) return;
   }
   if (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW) {
@@ -997,6 +1015,7 @@ function keyPressed() {
 
 function mousePressed() {
   if (!gameStarted) {
+    unlockAudioAndStartLobbyMusic();
     startScreenMousePressed();
     return;
   }
@@ -1046,5 +1065,11 @@ function mousePressed() {
       return;
     }
     tpBtnX += btnW + tpBtnPad;
+  }
+}
+
+function touchStarted() {
+  if (!gameStarted) {
+    unlockAudioAndStartLobbyMusic();
   }
 }
