@@ -103,6 +103,9 @@ let checkpointsUpdateOrder = [];
 /** World position readout (toggle with C or the XY button). */
 let showCoordsHud = true;
 
+/** Last p5 pixelDensity applied (avoid redundant buffer resets). */
+let _lastUiPixelDensity = 0;
+
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
   collectiblesData = loadJSON("collectibles.json");
@@ -129,8 +132,31 @@ function preload() {
   hatImg = loadImage("assets/images/hat.png");
 }
 
+/**
+ * Scale the canvas element so the fixed 800×480 game fills the browser (letterboxed),
+ * and raise pixelDensity so backing-store pixels match on-screen pixels (sharp UI/text).
+ */
+function applyCanvasDisplayScale() {
+  const s = min(windowWidth / VIEW_W, windowHeight / VIEW_H);
+  const el = document.querySelector("#game-root canvas");
+  if (el) {
+    el.style.width = `${VIEW_W * s}px`;
+    el.style.height = `${VIEW_H * s}px`;
+  }
+  const dpr =
+    typeof window !== "undefined" && window.devicePixelRatio
+      ? window.devicePixelRatio
+      : 1;
+  const nextPd = max(1, min(4, round(s * dpr)));
+  if (nextPd !== _lastUiPixelDensity) {
+    _lastUiPixelDensity = nextPd;
+    pixelDensity(nextPd);
+  }
+}
+
 function setup() {
-  createCanvas(VIEW_W, VIEW_H);
+  createCanvas(VIEW_W, VIEW_H).parent(select("#game-root"));
+  applyCanvasDisplayScale();
   textFont("Inter");
   textSize(14);
 
@@ -144,6 +170,10 @@ function setup() {
 
   cam = new Camera2D(width, height);
   loadLevel(levelIndex);
+}
+
+function windowResized() {
+  applyCanvasDisplayScale();
 }
 
 function loadLevel(i) {
