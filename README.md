@@ -19,7 +19,7 @@ You control a soft blob character moving through increasingly complex environmen
 - **Double jump**: A second jump is available in the air when your energy is high enough, but it costs extra energy.
 - **Checkpoints as sunflowers**: Reaching a sunflower plants a new respawn point and briefly shows a large cue word such as **FOCUS** or **BALANCE**, emphasizing the mental strategies players use to cope.
 - **Rain and weather**: Moving through rain clouds slows the character, representing environmental or sensory load that makes everything feel harder.
-- **Lightning clouds**: Periodic lightning strikes invert left/right controls for a short time, simulating moments of disorientation or loss of agency.
+
 
 Overall, the game aims to combine readable platforming with moment‑to‑moment changes in control, prompting players to notice how much cognitive effort “simple” movement can demand.
 
@@ -42,7 +42,7 @@ Play the game here: https://c5ke.github.io/A2_Group15_MidTermGame/
 
 - Press **Play** (button or Space/W/Up) to start.
 - Collect **stars** to increase your maximum energy.
-- Reach **sunflowers** to set respawn checkpoints.
+- Reach **daisies** to set respawn checkpoints.
 
 ---
 
@@ -50,15 +50,11 @@ Play the game here: https://c5ke.github.io/A2_Group15_MidTermGame/
 
 **Post‑Playtest**
 
-- **Level Structure**: Levels were redesigned to each stage introducing a single core challenge that represents a different cognitive function rather than multiple challenges at once. The current first level represents balance.
-- **Checkpoints**: Introduced sunflower checkpoints that change the respawn point.
-- **Platforms**: Adjusted platforms/obstacles in the beginning of the game so that the player needs to use the double jump to progress through the level.
+- **Energy bar**: 
+- **Level change**: Made focus easier
+- **Effect**: 
 
-**Post‑Showcase**
 
-- **Player Movement Lag**: Make player movement lag instead of lower jump height when energy is low
-- **Energy Bar**: Recharge when standing still
-- **Background Change**: Change the background grass to not look like a platform
 
 
 
