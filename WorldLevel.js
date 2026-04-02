@@ -114,7 +114,9 @@ class WorldLevel {
       }
       // Draw mountain layer on top of the sky (same uniform scale)
       if (typeof mountainImg !== "undefined" && mountainImg) {
-        const mScale = desiredImgH / mountainImg.height;
+        const mountainDrawScale = 0.55;
+        const mScale = (desiredImgH / mountainImg.height) * mountainDrawScale;
+
         const mTileW = mountainImg.width * mScale;
         const mTileH = mountainImg.height * mScale;
         // Shift mountains lower: align their base near the bottom of the sky
