@@ -71,6 +71,7 @@
           "color": "mediumseagreen",
           "options": { "isMoving": true, "rangeX": -70, "speed": 0.03 }
         },
+        { "x": 5700, "y": 320, "w": 100, "h": 12, "color": "gold" },
         {
           "x": 6000,
           "y": 280,
