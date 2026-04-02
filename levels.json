@@ -71,7 +71,6 @@
           "color": "mediumseagreen",
           "options": { "isMoving": true, "rangeX": -70, "speed": 0.03 }
         },
-        { "x": 5700, "y": 320, "w": 100, "h": 12, "color": "gold" },
         {
           "x": 6000,
           "y": 280,
@@ -133,7 +132,7 @@
         {"x": 8430, "y": 385, "w": 100, "h": 12, "color": "orchid"},
         {"x": 8540, "y": 370, "w": 100, "h": 12, "color": "orchid"},
 
-        {"x": 8720, "y": 328, "w": 95, "h": 12,  "color": "plum"},
+        {"x": 8720, "y": 335, "w": 80, "h": 12,  "color": "plum"},
         { "x": 8880, "y": 400, "w": 140, "h": 12, "color": "darkkhaki" },
         
         {
