@@ -56,6 +56,7 @@ let skyImg;
 let mountainImg;
 let jumpSound;
 let walkSound;
+let shineSound;
 let lobbyMusic;
 let walk1Img;
 let walk2Img;
@@ -116,6 +117,7 @@ function preload() {
   // Load jump sound effect
   jumpSound = loadSound("assets/sounds/jumpsound.mp3");
   walkSound = loadSound("assets/sounds/walk.mp3");
+  shineSound = loadSound("assets/sounds/shine.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   // Load blob walk animation frames
   walk1Img = loadImage("assets/images/walk1.png");
@@ -166,6 +168,9 @@ function setup() {
   }
   if (jumpSound && typeof jumpSound.setVolume === "function") {
     jumpSound.setVolume(0.8);
+  }
+  if (shineSound && typeof shineSound.setVolume === "function") {
+    shineSound.setVolume(0.75);
   }
 
   cam = new Camera2D(width, height);
@@ -447,7 +452,11 @@ function draw() {
     }
 
     for (const cp of checkpointsUpdateOrder) {
+      const wasReached = cp.reached;
       if (!cp.update(player)) continue;
+      if (!wasReached && cp.reached && shineSound) {
+        shineSound.play();
+      }
       respawnPoint = { x: cp.x + 2, y: cp.y - player.r };
       if (
         cp !== startCheckpoint &&
