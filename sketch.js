@@ -58,6 +58,7 @@ let jumpSound;
 let walkSound;
 let shineSound;
 let lobbyMusic;
+let winMusic;
 let walk1Img;
 let walk2Img;
 let seedImg;
@@ -119,6 +120,7 @@ function preload() {
   walkSound = loadSound("assets/sounds/walk.mp3");
   shineSound = loadSound("assets/sounds/shine.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
+  winMusic = loadSound("assets/sounds/winmusic.mp3");
   // Load blob walk animation frames
   walk1Img = loadImage("assets/images/walk1.png");
   walk2Img = loadImage("assets/images/walk2.png");
@@ -172,6 +174,9 @@ function setup() {
   if (shineSound && typeof shineSound.setVolume === "function") {
     shineSound.setVolume(0.75);
   }
+  if (winMusic && typeof winMusic.setVolume === "function") {
+    winMusic.setVolume(0.5);
+  }
 
   cam = new Camera2D(width, height);
   loadLevel(levelIndex);
@@ -191,6 +196,9 @@ function loadLevel(i) {
 
   if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
     walkSound.stop();
+  }
+  if (winMusic && winMusic.isPlaying && winMusic.isPlaying()) {
+    winMusic.stop();
   }
   player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
   player.spawnFromLevel(level);
@@ -478,6 +486,12 @@ function draw() {
       if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
         walkSound.stop();
       }
+      if (winMusic) {
+        if (winMusic.isPlaying && winMusic.isPlaying()) {
+          winMusic.stop();
+        }
+        winMusic.loop();
+      }
     }
 
     // Fall death → respawn (preserve stars); do not respawn on the same frame we just won
@@ -540,12 +554,12 @@ function draw() {
   // Foreground (Energy)
   const energyW = map(player.energy, 0, player.maxEnergy, 0, barW - 4);
   let energyCol = lerpColor(
-    color(255, 80, 80),
-    color(100, 200, 255),
+    color(255, 70, 70),
+    color(255, 190, 55),
     player.energy / player.maxEnergy,
   );
   if (boostActive) {
-    energyCol = color(90, 220, 140);
+    energyCol = color(255, 235, 90);
   }
   fill(energyCol);
   noStroke();
