@@ -871,14 +871,32 @@ function drawRainyCloudImage(cx, cy, displayW, flipH, flipV) {
   pop();
 }
 
-/** Stable 0–3 variant from world position (which flips to apply). */
-function rainyCloudVariant(cx, zone, salt) {
+/**
+ * Stable 0–3 variant (flip pattern). Includes `index` because cloud `cx` values
+ * are spaced by 280px and 280×17.3 is a multiple of 4, so position-only hashes
+ * repeated the same variant for every cloud in a zone.
+ */
+function rainyCloudVariant(cx, zone, salt, index) {
   const z =
     cx * 17.3 +
     zone.startX * 9.1 +
     zone.endX * 2.7 +
-    salt * 401.0;
+    salt * 401.0 +
+    index * 179.0;
   return abs(floor(z)) % 4;
+}
+
+/**
+ * Slow horizontal sway inside the zone. `swayHz` controls how fast each cloud drifts
+ * (world-stable; use different values per cloud for variety).
+ */
+function rainCloudDrawX(baseCx, zone, displayW, index, swayHz = 0.0115) {
+  const margin = 14 + displayW * 0.5;
+  const roomLeft = max(0, baseCx - zone.startX - margin);
+  const roomRight = max(0, zone.endX - baseCx - margin);
+  const amp = max(8, min(56, roomLeft, roomRight));
+  const t = typeof frameCount !== "undefined" ? frameCount : 0;
+  return baseCx + sin(t * swayHz + index * 1.91 + baseCx * 0.0007) * amp;
 }
 
 function drawRainZone(zone) {
@@ -888,53 +906,86 @@ function drawRainZone(zone) {
 
   noStroke();
 
-  // Clouds along the rain zone
+  // Several rain clouds spread across the zone, each with its own slow sway speed
+  const zw = max(160, zone.endX - zone.startX);
+  const cloudCount = constrain(floor(zw / 125), 4, 10);
   const cloudBases = [];
-  for (let x = zone.startX; x <= zone.endX; x += 280) {
-    cloudBases.push(x + ((x * 0.1) % 120));
+  for (let k = 0; k < cloudCount; k++) {
+    const u = (k + 0.5) / cloudCount;
+    const spread =
+      zone.startX +
+      u * zw +
+      sin(k * 2.17 + zone.startX * 0.012) * 34 -
+      17;
+    cloudBases.push(
+      constrain(spread, zone.startX + 80, zone.endX - 80),
+    );
   }
-  const cloudWidth = 55;
-  for (const cx of cloudBases) {
-    if (cx < left - 80 || cx > right + 80) continue;
-    const v = rainyCloudVariant(cx, zone, 1);
-    drawRainyCloudImage(cx, 50, 130, v % 2 === 1, v >= 2);
+  const sizeCycle = [1.0, 1.07, 0.93];
+  for (let i = 0; i < cloudBases.length; i++) {
+    const baseCx = cloudBases[i];
+    if (baseCx < left - 140 || baseCx > right + 140) continue;
+    const v = rainyCloudVariant(baseCx, zone, 1, i);
+    const dw = 130 * sizeCycle[i % sizeCycle.length];
+    const cy = 48 + (i % 4) * 2 - 3 + (i % 3 === 1 ? 2 : i % 3 === 2 ? -3 : 0);
+    const swayHz =
+      0.0059 + (abs(floor(baseCx * 0.079 + i * 101)) % 19) * 0.00072;
+    const drawCx = rainCloudDrawX(baseCx, zone, dw, i, swayHz);
+    drawRainyCloudImage(drawCx, cy, dw, v % 2 === 1, v >= 2);
   }
 
-  // Rain only under each cloud — dense, irregular grid to avoid blank strips
+  // Rain across the whole zone (world X from zone edge to edge; `left`/`right` are view-culled)
   const rainSpeed = 2.5;
   const cloudBottomY = 82;
   const rainFloorY = 500;
   const rainHeight = rainFloorY - cloudBottomY + 20;
   noStroke();
 
-  for (const cx of cloudBases) {
-    if (cx + cloudWidth < left || cx - cloudWidth > right) continue;
-    let wx = cx - cloudWidth;
-    let col = 0;
-    while (wx <= cx + cloudWidth) {
-      const step = 8 + (col % 5);
-      const colOffset = (wx * 17 + col * 7) % 100;
-      const numDrops = 9;
-      for (let d = 0; d < numDrops; d++) {
-        const phaseSeed = (wx * 23 + d * 41 + colOffset) % 997;
-        const phase = (frameCount * rainSpeed + phaseSeed) % rainHeight;
+  // World-anchored columns with irregular spacing + varied drops (still stable when camera pans)
+  const grid0 = zone.startX;
+  const columnAdvance = (x) => {
+    const h = abs(floor(x * 53.127 + grid0 * 0.31)) % 7;
+    return 5 + h;
+  };
+  let wx = grid0;
+  while (wx < left - 24) {
+    wx += columnAdvance(wx);
+  }
+  while (wx <= right + 18) {
+    if (wx >= left - 2 && wx <= right + 2) {
+      const colOffset = (wx * 17 + floor(wx * 2.71)) % 100;
+      const lanes = 10 + (abs(floor(wx * 0.883)) % 6);
+      const wxSkew = (abs(floor(wx)) % 29) * 0.35;
+      for (let d = 0; d < lanes; d++) {
+        const phaseSeed =
+          (wx * 29 + d * 53 + colOffset + (d * d * 7) % 101) % 997;
+        const spd = rainSpeed + (phaseSeed % 6) * 0.11;
+        const phase =
+          (frameCount * spd +
+            phaseSeed +
+            wxSkew +
+            (wx % 41) * 0.4 +
+            (d * 17) % 43) %
+          rainHeight;
         const y = cloudBottomY + phase;
-        const xJitter = ((wx * 11 + d * 19) % 13) - 6;
-        const x = wx + xJitter + phase * 0.015;
-        const dropH = 9 + (phaseSeed % 4);
-        const dropW = 2 + (phaseSeed % 5) * 0.25;
-        const alpha = 120 + ((phaseSeed + wx) % 70);
+        const xJitter = ((phaseSeed * 11 + d * 23) % 21) - 10;
+        const xWobble = ((wx * 3 + phaseSeed * 5) % 9) - 4;
+        const x = wx + xJitter + xWobble;
+        const dropH = 8 + (phaseSeed % 5);
+        const dropW = 1.8 + (phaseSeed % 6) * 0.28;
+        const alpha = 108 + ((phaseSeed + floor(wx * 0.12)) % 78);
         fill(200, 220, 240, alpha);
-        push();
-        translate(x, y);
-        ellipse(0, 0, dropW, dropH);
-        fill(255, 255, 255, alpha * 0.35);
-        ellipse(-dropW * 0.2, -dropH * 0.2, dropW * 0.5, dropH * 0.4);
-        pop();
+        ellipse(x, y, dropW, dropH);
+        fill(255, 255, 255, alpha * 0.32);
+        ellipse(
+          x - dropW * 0.2,
+          y - dropH * 0.2,
+          dropW * 0.52,
+          dropH * 0.42,
+        );
       }
-      wx += step;
-      col++;
     }
+    wx += columnAdvance(wx);
   }
   noStroke();
 }
@@ -954,10 +1005,14 @@ function drawLightningZone(zone) {
 
   // Clouds
   noStroke();
-  for (const cx of cloudBases) {
+  const sizeCycle = [1.0, 1.06, 0.94];
+  for (let i = 0; i < cloudBases.length; i++) {
+    const cx = cloudBases[i];
     if (cx < left - 100 || cx > right + 100) continue;
-    const v = rainyCloudVariant(cx, zone, 2);
-    drawRainyCloudImage(cx, cloudTopY + 12, 138, v % 2 === 1, v >= 2);
+    const v = rainyCloudVariant(cx, zone, 2, i);
+    const dw = 138 * sizeCycle[i % sizeCycle.length];
+    const cy = cloudTopY + 12 + (i % 3 === 1 ? 4 : i % 3 === 2 ? -5 : 0);
+    drawRainyCloudImage(cx, cy, dw, v % 2 === 1, v >= 2);
   }
 
   // Bolts
