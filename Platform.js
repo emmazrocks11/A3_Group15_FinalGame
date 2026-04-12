@@ -36,6 +36,9 @@ class Platform {
     this.longFirstVisiblePhase = options.longFirstVisiblePhase || false;
     this.firstLongIntroDone = false;
 
+    /** When true, WorldLevel draws `grassyGroundImg` stretched to the platform rect instead of tile strips. */
+    this.useGrassyGroundPng = options.grassyGround === true;
+
     if (this.isDisappearing && this.randomBlink) {
       // Random phase is chosen the first time the platform enters the viewport (see update()).
       this.phaseEnd = floor(
