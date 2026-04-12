@@ -310,7 +310,8 @@ class BlobPlayer {
   }
 
   /**
-   * Cartoon sweat bubbles when input lags behind intent or jump is “stuck” in the queue.
+   * Cartoon sweat bubbles: under 70% energy normally; in rain, whenever energy is not full.
+   * Intensity follows movement strain (boosted in rain when energy is still high).
    */
   drawSweatBubbles(cx, cy, strain) {
     const n = 5;
@@ -338,10 +339,14 @@ class BlobPlayer {
 
   draw(colHex) {
     const strain = this.movementStrain();
-    const sweatActive =
-      strain > 0.05 &&
-      (this._intentMove !== this._appliedMove ||
-        this.jumpPressQueue.length > 0);
+    const energyRatio =
+      this.maxEnergy > 0 ? this.energy / this.maxEnergy : 1;
+    const sweatInRain =
+      this.inRain && this.maxEnergy > 0 && this.energy < this.maxEnergy;
+    const sweatOutsideRain = energyRatio < 0.7;
+    const sweatActive = sweatInRain || sweatOutsideRain;
+    const bubbleStrain =
+      sweatInRain && energyRatio >= 0.7 ? max(strain, 0.38) : strain;
 
     const px = this.x;
     const py = this.y;
@@ -360,7 +365,7 @@ class BlobPlayer {
         image(img, 0, 0, width, height);
         pop();
         if (sweatActive) {
-          this.drawSweatBubbles(px, py, strain);
+          this.drawSweatBubbles(px, py, bubbleStrain);
         }
         return;
       }
@@ -386,7 +391,7 @@ class BlobPlayer {
     pop();
 
     if (sweatActive) {
-      this.drawSweatBubbles(px, py, strain);
+      this.drawSweatBubbles(px, py, bubbleStrain);
     }
   }
 

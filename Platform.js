@@ -32,6 +32,9 @@ class Platform {
     this.phaseEnd = 1;
     /** Blink/cycle runs only after this platform has intersected the camera view once. */
     this.disappearCycleStarted = false;
+    /** Set by loadLevel: first disappearing tiles after rain get one longer first visible phase. */
+    this.longFirstVisiblePhase = options.longFirstVisiblePhase || false;
+    this.firstLongIntroDone = false;
 
     if (this.isDisappearing && this.randomBlink) {
       // Random phase is chosen the first time the platform enters the viewport (see update()).
@@ -84,17 +87,38 @@ class Platform {
         }
         this.disappearCycleStarted = true;
         if (this.randomBlink) {
-          this.isVisible = random() < 0.62;
-          this.phaseEnd = this.isVisible
-            ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
-            : floor(random(this.minHiddenFrames, this.maxHiddenFrames + 1));
-          this.timer = floor(random(0, this.phaseEnd));
+          if (this.longFirstVisiblePhase && !this.firstLongIntroDone) {
+            this.isVisible = true;
+            const introLo = max(
+              round(this.minVisibleFrames * 2.45),
+              this.minVisibleFrames + 55,
+            );
+            const introHi = max(
+              round(this.maxVisibleFrames * 2.25),
+              introLo + 30,
+            );
+            this.phaseEnd = floor(random(introLo, introHi + 1));
+            this.timer = 0;
+          } else {
+            this.isVisible = random() < 0.62;
+            this.phaseEnd = this.isVisible
+              ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
+              : floor(random(this.minHiddenFrames, this.maxHiddenFrames + 1));
+            this.timer = floor(random(0, this.phaseEnd));
+          }
         }
       }
 
       if (this.randomBlink) {
         this.timer++;
         if (this.timer >= this.phaseEnd) {
+          if (
+            this.longFirstVisiblePhase &&
+            !this.firstLongIntroDone &&
+            this.isVisible
+          ) {
+            this.firstLongIntroDone = true;
+          }
           this.isVisible = !this.isVisible;
           this.timer = 0;
           this.phaseEnd = this.isVisible
