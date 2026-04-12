@@ -206,7 +206,7 @@ function loadLevel(i) {
   mainMenuFadeInFramesLeft = 0;
   level = LevelLoader.fromLevelsJson(allLevelsData, i);
 
-  // All non-ground platforms will be rendered using grass tiles in WorldLevel
+  // Platforms use grass tile strips (end 1 / middle 1–2 / end 2) in WorldLevel when art loads
 
   if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
     walkSound.stop();
