@@ -210,9 +210,9 @@ function drawCuteSparkles(px, py, pw, ph) {
   }
 }
 
-function drawCuteTitle(txt, cx, topY) {
+function drawCuteTitle(txt, cx, topY, titleSize = 30) {
   textFont("Poppins");
-  textSize(27);
+  textSize(titleSize);
   textStyle(BOLD);
   textAlign(CENTER, TOP);
   noStroke();
@@ -226,6 +226,106 @@ function drawCuteTitle(txt, cx, topY) {
 
 function drawCuteBackButton() {
   drawCuteGlassButton(getBackButtonRect(), "← Back", 17);
+}
+
+/** Width of a key cap (must match drawInstructionKeyCap). */
+function measureInstructionKeyCap(label, opts = {}) {
+  const size = opts.textSize ?? 14;
+  const minW = opts.minW ?? 34;
+  textFont("Poppins");
+  textStyle(BOLD);
+  textSize(size);
+  const innerPad = 10;
+  return max(minW, textWidth(label) + innerPad * 2);
+}
+
+/** Rounded key cap for instruction rows; returns drawn width. */
+function drawInstructionKeyCap(label, x, y, opts = {}) {
+  const h = opts.h ?? 32;
+  const size = opts.textSize ?? 14;
+  const rad = 8;
+  const w = measureInstructionKeyCap(label, opts);
+  textFont("Poppins");
+  textStyle(BOLD);
+  textSize(size);
+  fill(0, 0, 0, 20);
+  noStroke();
+  rect(x + 1.5, y + 2, w, h, rad);
+  fill(255, 252, 254, 235);
+  stroke(255, 190, 210, 210);
+  strokeWeight(1.5);
+  rect(x, y, w, h, rad);
+  fill(52, 36, 72);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  text(label, x + w / 2, y + h / 2 + 0.5);
+  textAlign(LEFT, TOP);
+  textStyle(NORMAL);
+  return w;
+}
+
+/** Classic WASD layout; returns { w, h } in px. */
+function drawWasdKeyCluster(ox, oy, keyW, keyH, gap) {
+  const wcx = ox + keyW + gap + keyW / 2;
+  drawInstructionKeyCap("W", wcx - keyW / 2, oy, { minW: keyW, h: keyH });
+  const y2 = oy + keyH + gap;
+  drawInstructionKeyCap("A", ox, y2, { minW: keyW, h: keyH });
+  drawInstructionKeyCap("S", ox + keyW + gap, y2, { minW: keyW, h: keyH });
+  drawInstructionKeyCap("D", ox + 2 * (keyW + gap), y2, { minW: keyW, h: keyH });
+  return { w: 3 * keyW + 2 * gap, h: 2 * keyH + gap };
+}
+
+/** Arrow-key diamond; returns { w, h } in px. */
+function drawArrowKeyCluster(ox, oy, keyW, keyH, gap) {
+  const wcx = ox + keyW + gap + keyW / 2;
+  drawInstructionKeyCap("↑", wcx - keyW / 2, oy, {
+    minW: keyW,
+    h: keyH,
+    textSize: 16,
+  });
+  const y2 = oy + keyH + gap;
+  drawInstructionKeyCap("←", ox, y2, { minW: keyW, h: keyH, textSize: 15 });
+  drawInstructionKeyCap("↓", ox + keyW + gap, y2, {
+    minW: keyW,
+    h: keyH,
+    textSize: 15,
+  });
+  drawInstructionKeyCap("→", ox + 2 * (keyW + gap), y2, {
+    minW: keyW,
+    h: keyH,
+    textSize: 15,
+  });
+  return { w: 3 * keyW + 2 * gap, h: 2 * keyH + gap };
+}
+
+/** Layered label matching instruction body style; returns width. */
+function drawInstructionInline(txt, x, cy) {
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(16);
+  textAlign(LEFT, CENTER);
+  fill(255, 255, 255, 200);
+  text(txt, x + 2, cy + 2);
+  fill(255, 255, 255, 95);
+  text(txt, x + 1, cy + 1);
+  fill(32, 28, 38);
+  text(txt, x, cy);
+  textAlign(LEFT, TOP);
+  return textWidth(txt);
+}
+
+function measureInstructionInline(txt) {
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(16);
+  return textWidth(txt);
+}
+
+function measureInstructionEmoji(symbol, textSize) {
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(textSize);
+  return textWidth(symbol);
 }
 
 function drawMainMenu() {
@@ -247,41 +347,185 @@ function drawInstructionsScreen() {
   const panelX = 28;
   const panelY = 36;
   const panelW = VIEW_W - 56;
-  const panelH = VIEW_H - 110;
+  const panelH = VIEW_H - 74;
   drawCuteGlassPanel(panelX, panelY, panelW, panelH);
   drawCuteSparkles(panelX, panelY, panelW, panelH);
 
-  drawCuteTitle("Instructions", VIEW_W / 2, panelY + 20);
+  drawCuteTitle("Instructions", VIEW_W / 2, panelY + 18);
 
-  textFont("Inter");
-  textStyle(NORMAL);
-  textAlign(LEFT, TOP);
-  textSize(15);
-  textLeading(24);
-  const tx = panelX + 28;
-  let ty = panelY + 64;
-  const lineGap = 24;
-  const lines = [
-    "Move with WASD or arrow keys.",
-    "Jump with Space, W, or Up Arrow — jumping uses energy.",
-    "Hold Shift to sprint (uses energy faster).",
-    "When your energy bar is high enough, you can double jump in the air.",
-    "Collect stars to raise your maximum energy.",
-    "Touch sunflowers to set checkpoints and respawn points.",
-    "Rain slows you down; lightning can briefly invert your controls.",
-    "Press R to reset the level.",
-  ];
-  for (const line of lines) {
-    fill(236, 130, 165, 240);
-    noStroke();
-    ellipse(tx - 10, ty + 9, 7, 7);
-    fill(255, 255, 255, 200);
-    text(line, tx + 2, ty + 2);
-    fill(255, 255, 255, 95);
-    text(line, tx + 1, ty + 1);
+  const panelCenterX = panelX + panelW / 2;
+  let ty = panelY + 54;
+  const keyW = 33;
+  const keyH = 30;
+  const keyG = 4;
+  const gapBlock = 10;
+  const gapWord = 8;
+  const rowStep = 18;
+
+  function rowCenterY(clusterH) {
+    return ty + clusterH / 2;
+  }
+
+  // — Move: WASD + arrows + “to move”
+  {
+    const c = { w: 3 * keyW + 2 * keyG, h: 2 * keyH + keyG };
+    const ar = { w: 3 * keyW + 2 * keyG, h: c.h };
+    const rowW =
+      c.w +
+      gapBlock +
+      measureInstructionInline("or") +
+      gapWord +
+      ar.w +
+      gapBlock +
+      measureInstructionInline("to move");
+    let tx = panelCenterX - rowW / 2;
+    drawWasdKeyCluster(tx, ty, keyW, keyH, keyG);
+    const midY = rowCenterY(c.h);
+    let cx = tx + c.w + gapBlock;
+    cx += drawInstructionInline("or", cx, midY) + gapWord;
+    drawArrowKeyCluster(cx, ty, keyW, keyH, keyG);
+    cx += ar.w + gapBlock;
+    drawInstructionInline("to move", cx, midY);
+    ty += c.h + rowStep;
+  }
+
+  // — Jump: keys + short note
+  {
+    const rowH = keyH;
+    const midY = ty + rowH / 2;
+    const wSpace = measureInstructionKeyCap("Space", { minW: 80, textSize: 13 });
+    const wW = measureInstructionKeyCap("W", { minW: keyW });
+    const wUp = measureInstructionKeyCap("↑", { minW: keyW, textSize: 16 });
+    const rowW =
+      wSpace +
+      gapBlock +
+      wW +
+      gapBlock +
+      wUp +
+      gapBlock +
+      measureInstructionInline("to jump, but it uses energy");
+    let tx = panelCenterX - rowW / 2;
+    let cx = tx;
+    cx += drawInstructionKeyCap("Space", cx, ty, { minW: 80, h: keyH, textSize: 13 }) + gapBlock;
+    cx += drawInstructionKeyCap("W", cx, ty, { minW: keyW, h: keyH }) + gapBlock;
+    cx += drawInstructionKeyCap("↑", cx, ty, { minW: keyW, h: keyH, textSize: 16 }) + gapBlock;
+    drawInstructionInline("to jump, but it uses energy", cx, midY);
+    ty += rowH + rowStep;
+  }
+
+  // — Double jump: if high energy use jump keys again in the air
+  {
+    const rowH = keyH + 2;
+    const midY = ty + rowH / 2;
+    const wSpace = measureInstructionKeyCap("Space", { minW: 64, textSize: 12 });
+    const wW = measureInstructionKeyCap("W", { minW: keyW });
+    const wUp = measureInstructionKeyCap("↑", { minW: keyW, textSize: 15 });
+    const rowW =
+      measureInstructionInline("If energy is up, use") +
+      gapBlock +
+      wSpace +
+      4 +
+      wW +
+      4 +
+      wUp +
+      gapBlock +
+      measureInstructionInline("to double jump");
+    let tx = panelCenterX - rowW / 2;
+    let cx = tx;
+    cx += drawInstructionInline("if energy is up, use", cx, midY) + gapBlock;
+    cx += drawInstructionKeyCap("Space", cx, ty, { minW: 64, h: keyH + 2, textSize: 12 }) + 4;
+    cx += drawInstructionKeyCap("W", cx, ty, { minW: keyW, h: keyH + 2 }) + 4;
+    cx += drawInstructionKeyCap("↑", cx, ty, { minW: keyW, h: keyH + 2, textSize: 15 }) + gapBlock;
+    drawInstructionInline("to double jump", cx, midY);
+    ty += rowH + rowStep;
+  }
+
+  // — Stars
+  {
+    const rowH = 28;
+    const midY = ty + rowH / 2;
+    const em = 21;
+    const wStar = measureInstructionEmoji("⭐", em);
+    const rowW = wStar + gapBlock + measureInstructionInline("raises your max energy");
+    let tx = panelCenterX - rowW / 2;
+    let cx = tx;
+    textFont("Inter");
+    textSize(em);
+    textAlign(LEFT, CENTER);
+    fill(255, 215, 0);
+    textStyle(NORMAL);
+    text("⭐", cx, midY + 1);
+    cx += wStar + gapBlock;
+    textAlign(LEFT, TOP);
+    drawInstructionInline("raises your max energy", cx, midY);
+    ty += rowH + rowStep;
+  }
+
+  // — Sunflowers
+  {
+    const rowH = 28;
+    const midY = ty + rowH / 2;
+    const em = 20;
+    const wFlower = measureInstructionEmoji("🌻", em);
+    const rowW = wFlower + gapBlock + measureInstructionInline("checkpoint · respawn here");
+    let tx = panelCenterX - rowW / 2;
+    let cx = tx;
+    textFont("Inter");
+    textSize(em);
+    textAlign(LEFT, CENTER);
     fill(32, 28, 38);
-    text(line, tx, ty);
-    ty += lineGap;
+    text("🌻", cx, midY + 1);
+    cx += wFlower + gapBlock;
+    textAlign(LEFT, TOP);
+    drawInstructionInline("checkpoint · respawn here", cx, midY);
+    ty += rowH + rowStep;
+  }
+
+  // — Weather
+  {
+    const rowH = 28;
+    const midY = ty + rowH / 2;
+    const em = 19;
+    const wRain = measureInstructionEmoji("🌧️", em);
+    const wBolt = measureInstructionEmoji("⚡", em);
+    const rowW =
+      wRain +
+      4 +
+      measureInstructionInline("slows you") +
+      gapBlock * 1.5 +
+      wBolt +
+      4 +
+      measureInstructionInline("inverts controls briefly");
+    let tx = panelCenterX - rowW / 2;
+    let cx = tx;
+    textFont("Inter");
+    textSize(em);
+    textAlign(LEFT, CENTER);
+    fill(32, 28, 38);
+    text("🌧️", cx, midY + 1);
+    cx += wRain + 4;
+    textAlign(LEFT, TOP);
+    cx += drawInstructionInline("slows you", cx, midY) + gapBlock * 1.5;
+    textFont("Inter");
+    textSize(em);
+    textAlign(LEFT, CENTER);
+    text("⚡", cx, midY + 1);
+    cx += wBolt + 4;
+    textAlign(LEFT, TOP);
+    drawInstructionInline("inverts controls briefly", cx, midY);
+    ty += rowH + rowStep;
+  }
+
+  // — Reset
+  {
+    const rowH = keyH;
+    const midY = ty + rowH / 2;
+    const wR = measureInstructionKeyCap("R", { minW: keyW });
+    const rowW = wR + gapBlock + measureInstructionInline("reset level");
+    let tx = panelCenterX - rowW / 2;
+    let cx = tx;
+    cx += drawInstructionKeyCap("R", cx, ty, { minW: keyW, h: keyH }) + gapBlock;
+    drawInstructionInline("reset level", cx, midY);
   }
 
   drawCuteBackButton();
@@ -296,11 +540,11 @@ function drawAboutAbiScreen() {
   const panelX = 28;
   const panelY = 36;
   const panelW = VIEW_W - 56;
-  const panelH = VIEW_H - 110;
+  const panelH = VIEW_H - 96;
   drawCuteGlassPanel(panelX, panelY, panelW, panelH);
   drawCuteSparkles(panelX, panelY, panelW, panelH);
 
-  drawCuteTitle("About ABI", VIEW_W / 2, panelY + 20);
+  drawCuteTitle("About ABI", VIEW_W / 2, panelY + 18);
 
   textFont("Inter");
   textStyle(NORMAL);

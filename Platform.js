@@ -30,17 +30,28 @@ class Platform {
     this.isVisible = true;
     this.alpha = 1;  // 0–1 for fading
     this.phaseEnd = 1;
+    /** Blink/cycle runs only after this platform has intersected the camera view once. */
+    this.disappearCycleStarted = false;
 
     if (this.isDisappearing && this.randomBlink) {
-      this.isVisible = random() < 0.62;
-      this.phaseEnd = this.isVisible
-        ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
-        : floor(random(this.minHiddenFrames, this.maxHiddenFrames + 1));
-      this.timer = floor(random(0, this.phaseEnd));
+      // Random phase is chosen the first time the platform enters the viewport (see update()).
+      this.phaseEnd = floor(
+        random(this.minVisibleFrames, this.maxVisibleFrames + 1),
+      );
     }
   }
 
-  update() {
+  /** World-space platform rect overlaps the camera view (world coords). */
+  static intersectsViewport(px, py, pw, ph, camX, camY, viewW, viewH) {
+    return !(
+      px + pw < camX ||
+      px > camX + viewW ||
+      py + ph < camY ||
+      py > camY + viewH
+    );
+  }
+
+  update(camX = 0, camY = 0, viewW = 800, viewH = 480) {
     this.lastX = this.x;
     this.lastY = this.y;
     
@@ -51,6 +62,36 @@ class Platform {
     }
 
     if (this.isDisappearing) {
+      const inView = Platform.intersectsViewport(
+        this.x,
+        this.y,
+        this.w,
+        this.h,
+        camX,
+        camY,
+        viewW,
+        viewH,
+      );
+      if (!this.disappearCycleStarted) {
+        if (!inView) {
+          this.isVisible = true;
+          this.alpha = 1;
+          // randomBlink picks a fresh phase on first view; fixed cycle keeps timerOffset
+          if (this.randomBlink) {
+            this.timer = 0;
+          }
+          return;
+        }
+        this.disappearCycleStarted = true;
+        if (this.randomBlink) {
+          this.isVisible = random() < 0.62;
+          this.phaseEnd = this.isVisible
+            ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
+            : floor(random(this.minHiddenFrames, this.maxHiddenFrames + 1));
+          this.timer = floor(random(0, this.phaseEnd));
+        }
+      }
+
       if (this.randomBlink) {
         this.timer++;
         if (this.timer >= this.phaseEnd) {
