@@ -151,11 +151,10 @@ class WorldLevel {
       } else {
         fill(c);
       }
-      // Render most platforms as tiled grass blocks (5px) if images exist,
-      // but skip the very bottom ground strips (large, low platforms).
-      const isBottomGround = p.y >= 420 && p.h >= 30;
-      if (!isBottomGround && typeof end1Img !== "undefined" && end1Img) {
+      // Tiled grass: end 1 → middle 1 / middle 2 (alternating) → end 2. Same aspect per tile; middles overlap slightly.
+      if (typeof end1Img !== "undefined" && end1Img) {
         push();
+        imageMode(CORNER);
         // Apply disappearing alpha to images
         if (p.isDisappearing) {
           tint(255, p.alpha * 255);
@@ -163,35 +162,50 @@ class WorldLevel {
           noTint();
         }
 
-        const tileW = 5; // each block is 5px wide
-        // Draw left end
         const leftX = p.x;
         const rightX = p.x + p.w;
+        const colW = (end1Img.width / end1Img.height) * p.h;
+        const overlap = min(colW * 0.18, 10);
+        const step = max(0.5, colW - overlap);
 
-        // Helper to draw an image scaled to width `tileW`, aligned to platform bottom
-        const drawTile = (img, drawX) => {
+        const drawTile = (img, drawX, tw = colW) => {
           if (!img) return;
-          const scale = tileW / img.width;
-          const tileH = img.height * scale;
-          const drawY = p.y + p.h - tileH; // align bottom to platform
-          image(img, drawX, drawY, tileW, tileH);
+          image(img, drawX, p.y, tw, p.h);
         };
 
-        // Draw left end (end1)
-        drawTile(end1Img, leftX);
+        /** Left slice of sprite so dest width `tw` matches cropped source. */
+        const drawTileLeftCrop = (img, drawX, tw) => {
+          if (!img || tw <= 0) return;
+          const sw = min(img.width, (tw / colW) * img.width);
+          image(img, drawX, p.y, tw, p.h, 0, 0, sw, img.height);
+        };
 
-        // Number of middle tiles between ends
-        const innerW = Math.max(0, p.w - tileW * 2);
-        const middleCount = Math.floor(innerW / tileW);
-        // Draw alternating middle tiles
-        for (let i = 0; i < middleCount; i++) {
-          const img = i % 2 === 0 ? middle1Img : middle2Img;
-          const drawX = leftX + tileW + i * tileW;
-          drawTile(img, drawX);
+        if (p.w < colW * 2) {
+          const half = p.w / 2;
+          if (end1Img) image(end1Img, leftX, p.y, half, p.h);
+          if (end2Img) image(end2Img, leftX + half, p.y, p.w - half, p.h);
+        } else {
+          drawTile(end1Img, leftX);
+
+          let m = 0;
+          while (leftX + colW + m * step + colW <= rightX - colW + 0.001) {
+            m++;
+          }
+          for (let i = 0; i < m; i++) {
+            const img = i % 2 === 0 ? middle1Img : middle2Img;
+            drawTile(img, leftX + colW + i * step);
+          }
+
+          const afterMiddles =
+            m > 0 ? leftX + colW + (m - 1) * step + colW : leftX + colW;
+          const gapW = rightX - colW - afterMiddles;
+          if (gapW > 0.5) {
+            const img = m % 2 === 0 ? middle1Img : middle2Img;
+            drawTileLeftCrop(img, afterMiddles, gapW);
+          }
+
+          drawTile(end2Img, rightX - colW);
         }
-
-        // Draw right end (end2) ensuring it sits at the platform's right edge
-        drawTile(end2Img, rightX - tileW);
 
         pop();
       } else {
