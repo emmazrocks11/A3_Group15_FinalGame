@@ -97,9 +97,7 @@ class BlobPlayer {
 
   energyLagFrames() {
     return constrain(
-      Math.round(
-        map(this.energy, 0, this.maxEnergy, this.maxMoveLagFrames, 0),
-      ),
+      Math.round(map(this.energy, 0, this.maxEnergy, this.maxMoveLagFrames, 0)),
       0,
       this.maxMoveLagFrames,
     );
@@ -126,7 +124,11 @@ class BlobPlayer {
       if (this.jumpSound) {
         this.jumpSound.play();
       }
-    } else if (!this.onGround && this.canDoubleJump && this.energy > this.maxEnergy / 2) {
+    } else if (
+      !this.onGround &&
+      this.canDoubleJump &&
+      this.energy > this.maxEnergy / 2
+    ) {
       // Double jump logic: only if in air, has double jump flag, and > 50% energy
       this.vy = this.jumpV * 0.8 * rainFactor;
       this.canDoubleJump = false; // consume the double jump
@@ -182,10 +184,9 @@ class BlobPlayer {
     }
 
     // Sprinting logic (follows intent, not delayed move)
-    this.isSprinting =
-      keyIsDown(SHIFT) && rawMove !== 0 && this.energy > 0;
+    this.isSprinting = keyIsDown(SHIFT) && rawMove !== 0 && this.energy > 0;
     let currentMaxRun = this.maxRun;
-    
+
     if (this.isSprinting) {
       currentMaxRun *= 1.5;
       // COMMENT/UNCOMMENT HERE TO ENABLE/DISABLE SPRINTING ENERGY CONSUMPTION
@@ -193,7 +194,8 @@ class BlobPlayer {
     }
 
     const rainFactor = this.inRain ? 0.55 : 1;
-    const effectiveAccel = this.accel * (this.isSprinting ? 1.5 : 1.0) * rainFactor;
+    const effectiveAccel =
+      this.accel * (this.isSprinting ? 1.5 : 1.0) * rainFactor;
     const effectiveMaxRun = currentMaxRun * rainFactor;
 
     // Energy regeneration: fast only when grounded, not sprinting, no input, and nearly stopped

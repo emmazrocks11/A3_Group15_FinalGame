@@ -168,22 +168,26 @@ class WorldLevel {
         const overlap = min(colW * 0.18, 10);
         const step = max(0.5, colW - overlap);
 
+        const isBottomGround = p.y >= 420 && p.h >= 30;
+        const visualOffset = isBottomGround ? 0 : 7;
+        const drawY = p.y + visualOffset;
+
         const drawTile = (img, drawX, tw = colW) => {
           if (!img) return;
-          image(img, drawX, p.y, tw, p.h);
+          image(img, drawX, drawY, tw, p.h);
         };
 
         /** Left slice of sprite so dest width `tw` matches cropped source. */
         const drawTileLeftCrop = (img, drawX, tw) => {
           if (!img || tw <= 0) return;
           const sw = min(img.width, (tw / colW) * img.width);
-          image(img, drawX, p.y, tw, p.h, 0, 0, sw, img.height);
+          image(img, drawX, drawY, tw, p.h, 0, 0, sw, img.height);
         };
 
         if (p.w < colW * 2) {
           const half = p.w / 2;
-          if (end1Img) image(end1Img, leftX, p.y, half, p.h);
-          if (end2Img) image(end2Img, leftX + half, p.y, p.w - half, p.h);
+          if (end1Img) image(end1Img, leftX, drawY, half, p.h);
+          if (end2Img) image(end2Img, leftX + half, drawY, p.w - half, p.h);
         } else {
           drawTile(end1Img, leftX);
 
