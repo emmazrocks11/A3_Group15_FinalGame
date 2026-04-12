@@ -778,7 +778,13 @@ function draw() {
     }
     if (checkpointMessage && alpha > 0) {
       push();
-      fill(40, 40, 50, alpha);
+      const checkpointMsgGreen = color("#77946A");
+      fill(
+        red(checkpointMsgGreen),
+        green(checkpointMsgGreen),
+        blue(checkpointMsgGreen),
+        alpha,
+      );
       textFont("Poppins");
       textStyle(BOLD);
       textSize(64);
