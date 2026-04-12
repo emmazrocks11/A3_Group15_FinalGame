@@ -1,3 +1,28 @@
+/** World Y of the water surface (must match `_drawWaterLayer`). */
+const WORLD_WATER_TOP_Y = 427;
+/**
+ * Bottom-ground grassy strip: top of draw may not sit lower than this offset under `WORLD_WATER_TOP_Y`,
+ * so stretched art still blankets the shoreline (world Y increases downward).
+ */
+const GRASSY_GROUND_SHORE_COVER_PX = 92;
+
+/**
+ * Fraction of `grassyground.png` height to skip from the top (sky / empty area).
+ * Only the lower part of the texture is stretched so the walk line `p.y` sits on grass, not on sky.
+ */
+const GRASSY_GROUND_SRC_CROP_TOP_FRAC = 0.38;
+/** Floor for draw height below `p.h` (px); strip also grows to viewport bottom. */
+const GRASSY_GROUND_DEST_EXTRA_BOTTOM = 14;
+/** Floor for extra vertical size (px); actual height reaches `cam.y + viewH - drawY`. */
+const GRASSY_GROUND_EXTRA_DRAW_HEIGHT = 48;
+/**
+ * Vertical nudge for the grass strip (world px). Negative = higher on screen (smaller Y);
+ * positive = lower.
+ */
+const GRASSY_GROUND_TOP_OFFSET_Y = -62;
+/** Extra nudge upward (world px) after shore clamp. */
+const GRASSY_GROUND_EXTRA_UP_PX = 10;
+
 class WorldLevel {
   constructor(levelJson) {
     this.name = levelJson.name ?? "Level";
@@ -33,7 +58,7 @@ class WorldLevel {
    * Matches prior ground layer height, Y anchor, and parallax (0.9).
    */
   _drawWaterLayer(desiredImgH, camX) {
-    const shorelineY = 427;
+    const shorelineY = WORLD_WATER_TOP_Y;
     const canvasBottom = typeof height !== "undefined" ? height : this.h + 120;
     const waterTop = shorelineY;
     const waterH = max(1, canvasBottom - waterTop);
@@ -151,8 +176,38 @@ class WorldLevel {
       } else {
         fill(c);
       }
-      // Tiled grass: end 1 → middle 1 / middle 2 (alternating) → end 2. Same aspect per tile; middles overlap slightly.
-      if (typeof end1Img !== "undefined" && end1Img) {
+      // Single stretched grassy ground art (per-platform option in levels.json)
+      if (
+        p.useGrassyGroundPng &&
+        typeof grassyGroundImg !== "undefined" &&
+        grassyGroundImg &&
+        grassyGroundImg.width > 0
+      ) {
+        push();
+        imageMode(CORNER);
+        if (p.isDisappearing) {
+          tint(255, p.alpha * 255);
+        } else {
+          noTint();
+        }
+        const isBottomGround = p.y >= 420 && p.h >= 30;
+        const visualOffset = isBottomGround ? 0 : 7;
+        let drawY = p.y + visualOffset + GRASSY_GROUND_TOP_OFFSET_Y;
+        if (isBottomGround) {
+          const shoreCoverTopMaxY = WORLD_WATER_TOP_Y - GRASSY_GROUND_SHORE_COVER_PX;
+          drawY = min(drawY, shoreCoverTopMaxY);
+        }
+        drawY -= GRASSY_GROUND_EXTRA_UP_PX + p.grassyVisualLift;
+        const screenBottomWorldY = camY + viewH;
+        const minGrassDrawH =
+          p.h + GRASSY_GROUND_DEST_EXTRA_BOTTOM + GRASSY_GROUND_EXTRA_DRAW_HEIGHT;
+        const drawH = max(1, minGrassDrawH, screenBottomWorldY - drawY);
+        const g = grassyGroundImg;
+        const sy = constrain(g.height * GRASSY_GROUND_SRC_CROP_TOP_FRAC, 0, g.height - 1);
+        const sh = g.height - sy;
+        image(g, p.x, drawY, p.w, drawH, 0, sy, g.width, sh);
+        pop();
+      } else if (typeof end1Img !== "undefined" && end1Img) {
         push();
         imageMode(CORNER);
         // Apply disappearing alpha to images

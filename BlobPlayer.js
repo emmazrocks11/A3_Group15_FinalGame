@@ -1,3 +1,9 @@
+/**
+ * When grounded on a platform whose grass art is shifted up (`grassyVisualLift`), draw the
+ * player this many px lower so feet line up with the art (collision unchanged).
+ */
+const BLOB_GROUND_DRAW_DROP_PX = 6;
+
 class BlobPlayer {
   constructor(jumpSound, walkFrames, walkStepL, walkStepR) {
     this.x = 0;
@@ -372,6 +378,13 @@ class BlobPlayer {
 
     const px = this.x;
     const py = this.y;
+    const rp = this.ridingPlatform;
+    const groundDrawDrop =
+      this.onGround &&
+      rp &&
+      rp.useGrassyGroundPng &&
+      rp.grassyVisualLift > 0;
+    const pyDraw = py + (groundDrawDrop ? BLOB_GROUND_DRAW_DROP_PX : 0);
 
     // If sprite frames exist, use them instead of wobble blob
     if (this.walkFrames && this.walkFrames.length > 0) {
@@ -382,12 +395,12 @@ class BlobPlayer {
         // Draw sprite sized like the blob but slightly taller and ~1cm bigger (≈10px) overall
         const width = this.r * 2 + 15;
         const height = this.r * 2.4 + 15;
-        translate(px, py);
+        translate(px, pyDraw);
         scale(this.facingDir, 1); // flip horizontally when moving left
         image(img, 0, 0, width, height);
         pop();
         if (sweatActive) {
-          this.drawSweatBubbles(px, py, bubbleStrain);
+          this.drawSweatBubbles(px, pyDraw, bubbleStrain);
         }
         return;
       }
@@ -395,7 +408,7 @@ class BlobPlayer {
 
     // Fallback: original blob shape (draw in local space so squash is centered)
     push();
-    translate(px, py);
+    translate(px, pyDraw);
     fill(color(colHex));
     noStroke();
     beginShape();
@@ -413,7 +426,7 @@ class BlobPlayer {
     pop();
 
     if (sweatActive) {
-      this.drawSweatBubbles(px, py, bubbleStrain);
+      this.drawSweatBubbles(px, pyDraw, bubbleStrain);
     }
   }
 

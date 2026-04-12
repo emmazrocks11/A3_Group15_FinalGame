@@ -84,6 +84,7 @@ let startScreenBuddyImg;
 let liedown1Img;
 let liedown2Img;
 let hatImg;
+let grassyGroundImg;
 let collectiblesData;
 let stars = [];
 let totalStarsCollected = 0;
@@ -160,6 +161,7 @@ function preload() {
   middle1Img = loadImage("assets/images/middle 1.png");
   middle2Img = loadImage("assets/images/middle 2.png");
   end2Img = loadImage("assets/images/end 2.png");
+  grassyGroundImg = loadImage("assets/images/grassyground.png");
 }
 
 /**

@@ -1,7 +1,7 @@
 {
   "startCheckpoint": { "x": 80, "y": 424, "text": "Balance" },
   "checkpoint": { "x": 4558, "y": 420, "text": "Focus" },
-  "checkpoint2": { "x": 8100, "y": 420, "text": "Memory" },
+  "checkpoint2": { "x": 8100, "y": 424, "text": "Memory" },
   "checkpoint3": { "x": 13770, "y": 420, "text": null },
   "rainZones": [
     { "startX": 8300, "endX": 9000 }
