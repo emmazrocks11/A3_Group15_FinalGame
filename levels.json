@@ -69,7 +69,7 @@
           "w": 100,
           "h": 12,
           "color": "mediumseagreen",
-          "options": { "isMoving": true, "rangeX": -70, "speed": 0.03 }
+          "options": { "isMoving": true, "rangeX": -100, "speed": 0.03 }
         },
         {
           "x": 6000,
@@ -106,7 +106,7 @@
           "w": 100,
           "h": 12,
           "color": "darkcyan",
-          "options": { "isMoving": true, "rangeY": 55, "speed": 0.025 }
+          "options": { "isMoving": true, "rangeY": 70, "speed": 0.025 }
         },
         {
           "x": 7350,
@@ -312,7 +312,7 @@
           "h": 12,
           "color": "dimgray"
         },
-        { "x": 12520, "y": 424, "w": 260, "h": 12, "color": "darkslategray" },
+        { "x": 12520, "y": 424, "w": 240, "h": 12, "color": "darkslategray" },
         { "x": 12800, "y": 424, "w": 300, "h": 12, "color": "gray" },
 
         { "x": 13200, "y": 424, "w": 800, "h": 36, "color": "green" }

@@ -142,8 +142,12 @@ class WorldLevel {
     rectMode(CORNER); // critical: undo any global rectMode(CENTER) [web:230]
     noStroke();
 
+    const camX = typeof cam !== "undefined" && cam ? cam.x : 0;
+    const camY = typeof cam !== "undefined" && cam ? cam.y : 0;
+    const viewW = typeof width !== "undefined" ? width : 800;
+    const viewH = typeof height !== "undefined" ? height : 480;
     for (const p of this.platforms) {
-      p.update(); // Update moving/disappearing platforms
+      p.update(camX, camY, viewW, viewH); // moving + disappearing (blink only when on-screen)
       if (p.isDisappearing && !p.isVisible) continue;
       let c = color(p.color || this.theme.platform);
       if (p.isDisappearing) {
