@@ -51,6 +51,10 @@ const MAIN_MENU_FADE_IN_FRAMES = 52;
  * one smooth ramp out of the zone (flat full strength between zone edges).
  */
 const RAIN_ATMO_APPROACH = 200;
+/** World Y: play splash SFX when the player's feet cross this line downward. */
+const WATER_SPLASH_SOUND_Y = 430;
+/** After passing `deathY`, wait this long before `respawnPlayer()`. */
+const FALL_DEATH_RESPAWN_DELAY_MS = 500;
 
 let allLevelsData;
 let levelIndex = 0;
@@ -64,6 +68,7 @@ let jumpSound;
 let walkStepGrassL;
 let walkStepGrassR;
 let shineSound;
+let splashSound;
 let lobbyMusic;
 let winMusic;
 let walk1Img;
@@ -115,6 +120,10 @@ let showCoordsHud = true;
 
 /** Last p5 pixelDensity applied (avoid redundant buffer resets). */
 let _lastUiPixelDensity = 0;
+/** Previous frame: player feet Y (`y + r`), for one-shot splash crossing `WATER_SPLASH_SOUND_Y`. */
+let _prevPlayerWorldBottom = null;
+/** When not null, `millis()` deadline to respawn after fall death (below `deathY`). */
+let fallDeathRespawnAtMs = null;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -129,6 +138,7 @@ function preload() {
   walkStepGrassL = loadSound("assets/sounds/sfx_step_grass_l.mp3");
   walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3");
   shineSound = loadSound("assets/sounds/shine.mp3");
+  splashSound = loadSound("assets/sounds/splash.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   winMusic = loadSound("assets/sounds/winmusic.mp3");
   // Load blob walk animation frames
@@ -186,6 +196,9 @@ function setup() {
   if (shineSound && typeof shineSound.setVolume === "function") {
     shineSound.setVolume(0.75);
   }
+  if (splashSound && typeof splashSound.setVolume === "function") {
+    splashSound.setVolume(0.85);
+  }
   if (winMusic && typeof winMusic.setVolume === "function") {
     winMusic.setVolume(0.5);
   }
@@ -205,6 +218,8 @@ function stopWalkStepSfx() {
 }
 
 function loadLevel(i) {
+  _prevPlayerWorldBottom = null;
+  fallDeathRespawnAtMs = null;
   gameWon = false;
   winScreenTimer = 0;
   winScreenCreditsDoneFrame = null;
@@ -383,13 +398,10 @@ function returnToStartScreen() {
 }
 
 function respawnPlayer() {
-  stopWalkStepSfx();
-  player = new BlobPlayer(
-    jumpSound,
-    [walk1Img, walk2Img],
-    walkStepGrassL,
-    walkStepGrassR,
-  );
+  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+    walkSound.stop();
+  }
+  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
   if (respawnPoint) {
     const dropHeight = 220;
     player.spawnAt(respawnPoint.x, respawnPoint.y - dropHeight);
@@ -488,6 +500,20 @@ function draw() {
           energyBoostTimer = 60;
         }
       }
+
+      const feetY = player.y + player.r;
+      if (
+        _prevPlayerWorldBottom != null &&
+        _prevPlayerWorldBottom <= WATER_SPLASH_SOUND_Y &&
+        feetY > WATER_SPLASH_SOUND_Y &&
+        player.vy > 0 &&
+        splashSound
+      ) {
+        splashSound.play();
+      }
+      _prevPlayerWorldBottom = feetY;
+    } else {
+      _prevPlayerWorldBottom = player.y + player.r;
     }
 
     if (awaitingFinalDaisy) {
@@ -515,6 +541,7 @@ function draw() {
 
     if (checkpoint3 && checkpoint3.finalSequenceComplete()) {
       gameWon = true;
+      fallDeathRespawnAtMs = null;
       winScreenTimer = 0;
       winScreenCreditsDoneFrame = null;
       checkpointMessage = null;
@@ -527,10 +554,18 @@ function draw() {
       }
     }
 
-    // Fall death → respawn (preserve stars); do not respawn on the same frame we just won
-    if (!gameWon && player.y - player.r > level.deathY) {
+    // Fall death → brief delay, then respawn (preserve stars)
+    if (fallDeathRespawnAtMs !== null && millis() >= fallDeathRespawnAtMs) {
       respawnPlayer();
       return;
+    }
+    if (!gameWon && player.y - player.r > level.deathY) {
+      if (fallDeathRespawnAtMs === null) {
+        fallDeathRespawnAtMs = millis() + FALL_DEATH_RESPAWN_DELAY_MS;
+        if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+          walkSound.stop();
+        }
+      }
     }
   }
 
