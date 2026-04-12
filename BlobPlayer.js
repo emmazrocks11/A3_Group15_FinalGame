@@ -64,7 +64,7 @@ class BlobPlayer {
     this._walkSfxStrideCounter = 0;
     /** Minimum ms between step plays (avoids rapid L/R machine-gun). */
     this.walkStepMinGapMs = 130;
-    this.walkStepVolume = 0.2;
+    this.walkStepVolume = 0.7;
 
     // Sprite animation
     this.walkFrames = walkFrames || [];
