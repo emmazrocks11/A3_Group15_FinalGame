@@ -61,7 +61,8 @@ let cam;
 let skyImg;
 let mountainImg;
 let jumpSound;
-let walkSound;
+let walkStepGrassL;
+let walkStepGrassR;
 let shineSound;
 let lobbyMusic;
 let winMusic;
@@ -125,7 +126,8 @@ function preload() {
   rainyCloudImg = loadImage("assets/images/rainycloud.png");
   // Load jump sound effect
   jumpSound = loadSound("assets/sounds/jumpsound.mp3");
-  walkSound = loadSound("assets/sounds/walk.mp3");
+  walkStepGrassL = loadSound("assets/sounds/sfx_step_grass_l.mp3");
+  walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3");
   shineSound = loadSound("assets/sounds/shine.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   winMusic = loadSound("assets/sounds/winmusic.mp3");
@@ -178,10 +180,6 @@ function setup() {
   textFont("Inter");
   textSize(14);
 
-  // Walking SFX at 2× speed (jump uses default 1×)
-  if (walkSound && typeof walkSound.rate === "function") {
-    walkSound.rate(2);
-  }
   if (jumpSound && typeof jumpSound.setVolume === "function") {
     jumpSound.setVolume(0.8);
   }
@@ -200,6 +198,12 @@ function windowResized() {
   applyCanvasDisplayScale();
 }
 
+function stopWalkStepSfx() {
+  for (const s of [walkStepGrassL, walkStepGrassR]) {
+    if (s && s.isPlaying && s.isPlaying()) s.stop();
+  }
+}
+
 function loadLevel(i) {
   gameWon = false;
   winScreenTimer = 0;
@@ -210,13 +214,16 @@ function loadLevel(i) {
 
   // Platforms use grass tile strips (end 1 / middle 1–2 / end 2) in WorldLevel when art loads
 
-  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-    walkSound.stop();
-  }
+  stopWalkStepSfx();
   if (winMusic && winMusic.isPlaying && winMusic.isPlaying()) {
     winMusic.stop();
   }
-  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
+  player = new BlobPlayer(
+    jumpSound,
+    [walk1Img, walk2Img],
+    walkStepGrassL,
+    walkStepGrassR,
+  );
   player.spawnFromLevel(level);
 
   const dropHeight = 220;
@@ -376,10 +383,13 @@ function returnToStartScreen() {
 }
 
 function respawnPlayer() {
-  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-    walkSound.stop();
-  }
-  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
+  stopWalkStepSfx();
+  player = new BlobPlayer(
+    jumpSound,
+    [walk1Img, walk2Img],
+    walkStepGrassL,
+    walkStepGrassR,
+  );
   if (respawnPoint) {
     const dropHeight = 220;
     player.spawnAt(respawnPoint.x, respawnPoint.y - dropHeight);
@@ -480,13 +490,8 @@ function draw() {
       }
     }
 
-    if (
-      awaitingFinalDaisy &&
-      walkSound &&
-      walkSound.isPlaying &&
-      walkSound.isPlaying()
-    ) {
-      walkSound.stop();
+    if (awaitingFinalDaisy) {
+      stopWalkStepSfx();
     }
 
     for (const cp of checkpointsUpdateOrder) {
@@ -513,9 +518,7 @@ function draw() {
       winScreenTimer = 0;
       winScreenCreditsDoneFrame = null;
       checkpointMessage = null;
-      if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-        walkSound.stop();
-      }
+      stopWalkStepSfx();
       if (winMusic) {
         if (winMusic.isPlaying && winMusic.isPlaying()) {
           winMusic.stop();

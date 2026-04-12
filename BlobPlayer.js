@@ -1,5 +1,5 @@
 class BlobPlayer {
-  constructor(jumpSound, walkFrames, walkSound) {
+  constructor(jumpSound, walkFrames, walkStepL, walkStepR) {
     this.x = 0;
     this.y = 0;
     this.r = 26;
@@ -49,7 +49,16 @@ class BlobPlayer {
     // Status effects
     this.invertTimer = 0; // frames remaining for inverted left/right
     this.jumpSound = jumpSound;
-    this.walkSound = walkSound;
+    this.walkStepL = walkStepL;
+    this.walkStepR = walkStepR;
+    this._walkStepNextLeft = true;
+    this._nextWalkStepAllowedMs = 0;
+    /** Play grass step every N walk-frame advances (sprite still updates every advance). */
+    this._walkSfxStride = 2;
+    this._walkSfxStrideCounter = 0;
+    /** Minimum ms between step plays (avoids rapid L/R machine-gun). */
+    this.walkStepMinGapMs = 130;
+    this.walkStepVolume = 0.2;
 
     // Sprite animation
     this.walkFrames = walkFrames || [];
@@ -270,18 +279,44 @@ class BlobPlayer {
 
     this.t += this.tSpeed;
 
-    // Simple walk animation timer (only when moving on ground)
-    const movingOnGround = this.onGround && Math.abs(this.vx) > 0.1;
+    // Walk animation every animSpeed frames; grass SFX less often + min gap between plays
+    const movingOnGround =
+      this.onGround &&
+      (Math.abs(this.vx) > 0.1 || Math.abs(this._appliedMove) > 0);
     if (movingOnGround) {
       this.animTimer++;
       if (this.animTimer >= this.animSpeed) {
         this.animTimer = 0;
-        this.animFrame = (this.animFrame + 1) % this.walkFrames.length;
+        const n = max(1, this.walkFrames.length);
+        this.animFrame = (this.animFrame + 1) % n;
+        this._walkSfxStrideCounter++;
+        if (
+          this._walkSfxStrideCounter >= this._walkSfxStride &&
+          millis() >= this._nextWalkStepAllowedMs
+        ) {
+          this._walkSfxStrideCounter = 0;
+          const snd = this._walkStepNextLeft ? this.walkStepL : this.walkStepR;
+          if (snd && typeof snd.play === "function") {
+            if (typeof snd.stop === "function") snd.stop();
+            if (typeof snd.setVolume === "function") {
+              snd.setVolume(this.walkStepVolume);
+            }
+            snd.play();
+          }
+          this._walkStepNextLeft = !this._walkStepNextLeft;
+          this._nextWalkStepAllowedMs = millis() + this.walkStepMinGapMs;
+        }
       }
     } else {
-      // Reset to first frame when idle / in air so it looks clean
       this.animTimer = 0;
       this.animFrame = 0;
+      this._walkSfxStrideCounter = 0;
+      if (this.walkStepL && this.walkStepL.isPlaying && this.walkStepL.isPlaying()) {
+        this.walkStepL.stop();
+      }
+      if (this.walkStepR && this.walkStepR.isPlaying && this.walkStepR.isPlaying()) {
+        this.walkStepR.stop();
+      }
     }
 
     // Update facing direction based on horizontal velocity
@@ -289,19 +324,6 @@ class BlobPlayer {
       this.facingDir = this.vx < 0 ? -1 : 1;
     }
 
-    if (this.walkSound) {
-      const walking =
-        this.onGround &&
-        (Math.abs(this.vx) > 0.1 || Math.abs(this._appliedMove) > 0);
-      if (walking) {
-        this.walkSound.setVolume(1.5);
-        if (!this.walkSound.isPlaying()) {
-          this.walkSound.loop();
-        }
-      } else if (this.walkSound.isPlaying()) {
-        this.walkSound.stop();
-      }
-    }
   }
 
   applyStarEnergyBonus(count) {
