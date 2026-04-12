@@ -71,6 +71,7 @@ let seedImg;
 let grow1Img;
 let grow2Img;
 let daisyImg;
+let instructionsHowToImg;
 let splashScreenImg;
 let daisyNameImg;
 let startScreenBuddyImg;
@@ -135,6 +136,7 @@ function preload() {
   grow1Img = loadImage("assets/images/grow1.png");
   grow2Img = loadImage("assets/images/grow2.png");
   daisyImg = loadImage("assets/images/daisy.png");
+  instructionsHowToImg = loadImage("assets/images/instructions.png");
   splashScreenImg = loadImage("assets/images/splashscreen.png");
   daisyNameImg = loadImage("assets/images/daisyname.png");
   startScreenBuddyImg = loadImage("assets/images/startscreenbuddy.png");
