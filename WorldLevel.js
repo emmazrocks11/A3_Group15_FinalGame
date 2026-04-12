@@ -33,7 +33,7 @@ class WorldLevel {
    * Matches prior ground layer height, Y anchor, and parallax (0.9).
    */
   _drawWaterLayer(desiredImgH, camX) {
-    const shorelineY = 424;
+    const shorelineY = 427;
     const canvasBottom = typeof height !== "undefined" ? height : this.h + 120;
     const waterTop = shorelineY;
     const waterH = max(1, canvasBottom - waterTop);
@@ -180,9 +180,13 @@ class WorldLevel {
         /** Left slice of sprite so dest width `tw` matches cropped source. */
         const drawTileLeftCrop = (img, drawX, tw) => {
           if (!img || tw <= 0) return;
-          const sw = min(img.width, (tw / colW) * img.width);
-          image(img, drawX, drawY, tw, p.h, 0, 0, sw, img.height);
+          const twClamped = min(tw, colW * 1.35);
+          const sw = min(img.width, (twClamped / colW) * img.width);
+          image(img, drawX, drawY, twClamped, p.h, 0, 0, sw, img.height);
         };
+
+        /** 1px overlap hides hairline gaps between last middle and end2 (float / filtering). */
+        const seamPx = 1;
 
         if (p.w < colW * 2) {
           const half = p.w / 2;
@@ -203,12 +207,14 @@ class WorldLevel {
           const afterMiddles =
             m > 0 ? leftX + colW + (m - 1) * step + colW : leftX + colW;
           const gapW = rightX - colW - afterMiddles;
-          if (gapW > 0.5) {
+          if (gapW > 0.01) {
             const img = m % 2 === 0 ? middle1Img : middle2Img;
-            drawTileLeftCrop(img, afterMiddles, gapW);
+            drawTileLeftCrop(img, afterMiddles, gapW + seamPx);
           }
 
-          drawTile(end2Img, rightX - colW);
+          if (end2Img) {
+            image(end2Img, rightX - colW - seamPx, drawY, colW + seamPx, p.h);
+          }
         }
 
         pop();
