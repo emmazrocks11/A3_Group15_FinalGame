@@ -60,8 +60,7 @@ class WorldLevel {
       rect(wx0, y0, ww, y1 - y0 + 1);
     }
 
-    const tAnim =
-      typeof frameCount !== "undefined" ? frameCount * 0.055 : 0;
+    const tAnim = typeof frameCount !== "undefined" ? frameCount * 0.055 : 0;
     for (let k = 0; k < 3; k++) {
       const phase = k * 1.7;
       stroke(230, 248, 255, 95 - k * 22);
@@ -82,10 +81,7 @@ class WorldLevel {
     noStroke();
     for (let x = wx0; x < wx0 + ww; x += 140) {
       const cx = x + sin(tAnim * 0.8 + x * 0.01) * 30;
-      const cy =
-        waterTop +
-        waterH * 0.45 +
-        sin(tAnim + x * 0.02) * 12;
+      const cy = waterTop + waterH * 0.45 + sin(tAnim + x * 0.02) * 12;
       fill(255, 255, 255, 18);
       ellipse(cx, cy, 90 + sin(x) * 20, 24);
     }
@@ -155,7 +151,52 @@ class WorldLevel {
       } else {
         fill(c);
       }
-      rect(p.x, p.y, p.w, p.h); // x,y = top-left [web:234]
+      // Render most platforms as tiled grass blocks (5px) if images exist,
+      // but skip the very bottom ground strips (large, low platforms).
+      const isBottomGround = p.y >= 420 && p.h >= 30;
+      if (!isBottomGround && typeof end1Img !== "undefined" && end1Img) {
+        push();
+        // Apply disappearing alpha to images
+        if (p.isDisappearing) {
+          tint(255, p.alpha * 255);
+        } else {
+          noTint();
+        }
+
+        const tileW = 5; // each block is 5px wide
+        // Draw left end
+        const leftX = p.x;
+        const rightX = p.x + p.w;
+
+        // Helper to draw an image scaled to width `tileW`, aligned to platform bottom
+        const drawTile = (img, drawX) => {
+          if (!img) return;
+          const scale = tileW / img.width;
+          const tileH = img.height * scale;
+          const drawY = p.y + p.h - tileH; // align bottom to platform
+          image(img, drawX, drawY, tileW, tileH);
+        };
+
+        // Draw left end (end1)
+        drawTile(end1Img, leftX);
+
+        // Number of middle tiles between ends
+        const innerW = Math.max(0, p.w - tileW * 2);
+        const middleCount = Math.floor(innerW / tileW);
+        // Draw alternating middle tiles
+        for (let i = 0; i < middleCount; i++) {
+          const img = i % 2 === 0 ? middle1Img : middle2Img;
+          const drawX = leftX + tileW + i * tileW;
+          drawTile(img, drawX);
+        }
+
+        // Draw right end (end2) ensuring it sits at the platform's right edge
+        drawTile(end2Img, rightX - tileW);
+
+        pop();
+      } else {
+        rect(p.x, p.y, p.w, p.h); // x,y = top-left [web:234]
+      }
     }
     pop();
   }

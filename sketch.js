@@ -54,7 +54,6 @@ let player;
 let cam;
 let skyImg;
 let mountainImg;
-let rainyCloudImg;
 let jumpSound;
 let walkSound;
 let shineSound;
@@ -136,6 +135,11 @@ function preload() {
   liedown1Img = loadImage("assets/images/liedown1.png");
   liedown2Img = loadImage("assets/images/liedown2.png");
   hatImg = loadImage("assets/images/hat.png");
+  // Grass platform tiles (small blocks)
+  end1Img = loadImage("assets/images/end 1.png");
+  middle1Img = loadImage("assets/images/middle 1.png");
+  middle2Img = loadImage("assets/images/middle 2.png");
+  end2Img = loadImage("assets/images/end 2.png");
 }
 
 /**
@@ -195,6 +199,8 @@ function loadLevel(i) {
   winToMenuBlackoutFramesLeft = null;
   mainMenuFadeInFramesLeft = 0;
   level = LevelLoader.fromLevelsJson(allLevelsData, i);
+
+  // All non-ground platforms will be rendered using grass tiles in WorldLevel
 
   if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
     walkSound.stop();
@@ -312,11 +318,7 @@ function loadLevel(i) {
   }
   if (lightningZone) {
     const rawMid = (lightningZone.startX + lightningZone.endX) / 2;
-    const lx = constrain(
-      rawMid,
-      player.r + 4,
-      level.w - player.r - 4,
-    );
+    const lx = constrain(rawMid, player.r + 4, level.w - player.r - 4);
     const groundY = checkpoint2 ? checkpoint2.y - player.r : 424 - player.r;
     checkpointTpTargets.push({
       label: "Lightning",
@@ -457,7 +459,12 @@ function draw() {
       }
     }
 
-    if (awaitingFinalDaisy && walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
+    if (
+      awaitingFinalDaisy &&
+      walkSound &&
+      walkSound.isPlaying &&
+      walkSound.isPlaying()
+    ) {
       walkSound.stop();
     }
 
@@ -666,7 +673,11 @@ function draw() {
   rect(coordBtnX, coordBtnY, coordBtnW, coordBtnH, 6);
   fill(255);
   noStroke();
-  text(showCoordsHud ? "hide" : "XY", coordBtnX + coordBtnW / 2, coordBtnY + coordBtnH / 2);
+  text(
+    showCoordsHud ? "hide" : "XY",
+    coordBtnX + coordBtnW / 2,
+    coordBtnY + coordBtnH / 2,
+  );
 
   if (showCoordsHud) {
     textAlign(RIGHT, TOP);
@@ -758,7 +769,10 @@ function draw() {
     if (autoMenu && winToMenuBlackoutFramesLeft === null) {
       winToMenuBlackoutFramesLeft = WIN_TO_MENU_FADE_OUT_FRAMES;
     }
-    if (winToMenuBlackoutFramesLeft !== null && winToMenuBlackoutFramesLeft > 0) {
+    if (
+      winToMenuBlackoutFramesLeft !== null &&
+      winToMenuBlackoutFramesLeft > 0
+    ) {
       const N = WIN_TO_MENU_FADE_OUT_FRAMES;
       const delta = N - winToMenuBlackoutFramesLeft;
       const top = max(N - 1, 1);
@@ -871,18 +885,9 @@ function drawRainyCloudImage(cx, cy, displayW, flipH, flipV) {
   pop();
 }
 
-/**
- * Stable 0–3 variant (flip pattern). Includes `index` because cloud `cx` values
- * are spaced by 280px and 280×17.3 is a multiple of 4, so position-only hashes
- * repeated the same variant for every cloud in a zone.
- */
-function rainyCloudVariant(cx, zone, salt, index) {
-  const z =
-    cx * 17.3 +
-    zone.startX * 9.1 +
-    zone.endX * 2.7 +
-    salt * 401.0 +
-    index * 179.0;
+/** Stable 0–3 variant from world position (which flips to apply). */
+function rainyCloudVariant(cx, zone, salt) {
+  const z = cx * 17.3 + zone.startX * 9.1 + zone.endX * 2.7 + salt * 401.0;
   return abs(floor(z)) % 4;
 }
 
