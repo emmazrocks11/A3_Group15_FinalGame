@@ -54,6 +54,7 @@ let player;
 let cam;
 let skyImg;
 let mountainImg;
+let rainyCloudImg;
 let jumpSound;
 let walkSound;
 let shineSound;
@@ -115,6 +116,7 @@ function preload() {
   skyImg = loadImage("assets/images/sky.png");
   // Load mountain layer to draw on top of the sky
   mountainImg = loadImage("assets/images/mountain.png");
+  rainyCloudImg = loadImage("assets/images/rainycloud.png");
   // Load jump sound effect
   jumpSound = loadSound("assets/sounds/jumpsound.mp3");
   walkSound = loadSound("assets/sounds/walk.mp3");
@@ -545,6 +547,19 @@ function draw() {
     energyBoostTimer--;
   }
 
+  const lowEnergyHud =
+    player.maxEnergy > 0 && player.energy <= player.maxEnergy * 0.75;
+  let barShakeX = 0;
+  let barShakeY = 0;
+  if (lowEnergyHud) {
+    const t = frameCount;
+    barShakeX = sin(t * 0.12) * 1.65 + sin(t * 0.41 + 0.8) * 0.85;
+    barShakeY = cos(t * 0.14) * 1.15 + cos(t * 0.33 + 1.1) * 0.7;
+  }
+
+  push();
+  translate(barShakeX, barShakeY);
+
   // Background with border
   fill(240, 240, 245);
   stroke(180, 180, 190);
@@ -609,6 +624,8 @@ function draw() {
     const arrowY = barY + barH / 2 - 10;
     text("↑", arrowX, arrowY);
   }
+
+  pop();
 
   // Stars Counter HUD (Aligned with Energy Bar)
   textFont("Poppins");
@@ -842,6 +859,28 @@ function drawWinScreen() {
   }
 }
 
+/** Rain / lightning clouds: `rainycloud.png` centered in world space. */
+function drawRainyCloudImage(cx, cy, displayW, flipH, flipV) {
+  if (!rainyCloudImg || rainyCloudImg.width <= 0) return;
+  push();
+  translate(cx, cy);
+  scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  imageMode(CENTER);
+  const displayH = (rainyCloudImg.height / rainyCloudImg.width) * displayW;
+  image(rainyCloudImg, 0, 0, displayW, displayH);
+  pop();
+}
+
+/** Stable 0–3 variant from world position (which flips to apply). */
+function rainyCloudVariant(cx, zone, salt) {
+  const z =
+    cx * 17.3 +
+    zone.startX * 9.1 +
+    zone.endX * 2.7 +
+    salt * 401.0;
+  return abs(floor(z)) % 4;
+}
+
 function drawRainZone(zone) {
   const left = max(zone.startX, cam.x - 50);
   const right = min(zone.endX, cam.x + width + 50);
@@ -849,20 +888,16 @@ function drawRainZone(zone) {
 
   noStroke();
 
-  // Clouds (grey puffs along the rain zone)
+  // Clouds along the rain zone
   const cloudBases = [];
   for (let x = zone.startX; x <= zone.endX; x += 280) {
     cloudBases.push(x + ((x * 0.1) % 120));
   }
-  fill(140, 150, 165, 200);
   const cloudWidth = 55;
   for (const cx of cloudBases) {
     if (cx < left - 80 || cx > right + 80) continue;
-    ellipse(cx, 45, 90, 35);
-    ellipse(cx - 35, 55, 70, 28);
-    ellipse(cx + 40, 52, 75, 30);
-    ellipse(cx - 10, 38, 55, 25);
-    ellipse(cx + 25, 40, 50, 22);
+    const v = rainyCloudVariant(cx, zone, 1);
+    drawRainyCloudImage(cx, 50, 130, v % 2 === 1, v >= 2);
   }
 
   // Rain only under each cloud — dense, irregular grid to avoid blank strips
@@ -919,14 +954,10 @@ function drawLightningZone(zone) {
 
   // Clouds
   noStroke();
-  fill(110, 120, 135, 210);
   for (const cx of cloudBases) {
     if (cx < left - 100 || cx > right + 100) continue;
-    ellipse(cx, cloudTopY + 10, 110, 40);
-    ellipse(cx - 42, cloudTopY + 20, 85, 32);
-    ellipse(cx + 46, cloudTopY + 18, 90, 34);
-    ellipse(cx - 12, cloudTopY + 2, 70, 28);
-    ellipse(cx + 24, cloudTopY + 4, 62, 24);
+    const v = rainyCloudVariant(cx, zone, 2);
+    drawRainyCloudImage(cx, cloudTopY + 12, 138, v % 2 === 1, v >= 2);
   }
 
   // Bolts
