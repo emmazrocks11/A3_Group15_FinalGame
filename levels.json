@@ -85,7 +85,12 @@
           "w": 110,
           "h": 12,
           "color": "slateblue",
-          "options": { "isMoving": true, "rangeX": 70, "rangeY": 40, "speed": 0.028 }
+          "options": {
+            "isMoving": true,
+            "rangeX": 70,
+            "rangeY": 40,
+            "speed": 0.028
+          }
         },
         {
           "x": 6600,
@@ -128,13 +133,13 @@
         },
 
         { "x": 8320, "y": 410, "w": 100, "h": 12, "color": "coral" },
-        
-        {"x": 8430, "y": 385, "w": 100, "h": 12, "color": "orchid"},
-        {"x": 8540, "y": 370, "w": 100, "h": 12, "color": "orchid"},
 
-        {"x": 8720, "y": 335, "w": 80, "h": 12,  "color": "plum"},
+        { "x": 8430, "y": 385, "w": 100, "h": 12, "color": "orchid" },
+        { "x": 8540, "y": 370, "w": 100, "h": 12, "color": "orchid" },
+
+        { "x": 8720, "y": 335, "w": 80, "h": 12, "color": "plum" },
         { "x": 8880, "y": 400, "w": 140, "h": 12, "color": "darkkhaki" },
-        
+
         {
           "x": 9080,
           "y": 352,
@@ -154,7 +159,7 @@
         {
           "x": 9280,
           "y": 312,
-          "w": 88,
+          "w": 90,
           "h": 12,
           "color": "darkturquoise",
           "options": {
@@ -187,7 +192,7 @@
         {
           "x": 9860,
           "y": 292,
-          "w": 92,
+          "w": 90,
           "h": 12,
           "color": "lightcoral",
           "options": {
@@ -204,7 +209,7 @@
         {
           "x": 10240,
           "y": 340,
-          "w": 98,
+          "w": 100,
           "h": 12,
           "color": "teal",
           "options": {
@@ -237,7 +242,7 @@
         {
           "x": 10840,
           "y": 356,
-          "w": 102,
+          "w": 100,
           "h": 12,
           "color": "mediumorchid",
           "options": {
@@ -253,7 +258,7 @@
         {
           "x": 11060,
           "y": 316,
-          "w": 94,
+          "w": 95,
           "h": 12,
           "color": "steelblue",
           "options": {
@@ -286,7 +291,7 @@
         {
           "x": 11740,
           "y": 320,
-          "w": 96,
+          "w": 95,
           "h": 12,
           "color": "olivedrab",
           "options": {
