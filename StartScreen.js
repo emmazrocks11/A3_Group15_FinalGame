@@ -457,13 +457,16 @@ function drawStartScreen() {
   } else {
     drawMainMenu();
   }
+  updateStartScreenMenuHoverSound();
 }
 
 function startScreenMousePressed() {
   if (menuScreen === "main") {
     for (const b of getMainMenuButtons()) {
       if (pointInRect(mouseX, mouseY, b)) {
+        playUiClickSound();
         if (b.id === "play") {
+          resetStartMenuHoverSoundState();
           gameStarted = true;
           mainMenuPlayLabelReplay = false;
           checkpointMessage = "Balance";
@@ -477,6 +480,7 @@ function startScreenMousePressed() {
       }
     }
   } else if (pointInRect(mouseX, mouseY, getBackButtonRect())) {
+    playUiClickSound();
     menuScreen = "main";
   }
 }

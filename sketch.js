@@ -69,6 +69,8 @@ let walkStepGrassL;
 let walkStepGrassR;
 let shineSound;
 let splashSound;
+let uiHoverSound;
+let uiClickSound;
 let lobbyMusic;
 let winMusic;
 let walk1Img;
@@ -125,6 +127,10 @@ let _lastUiPixelDensity = 0;
 let _prevPlayerWorldBottom = null;
 /** When not null, `millis()` deadline to respawn after fall death (below `deathY`). */
 let fallDeathRespawnAtMs = null;
+/** Last hovered in-game HUD control id (`coord`, `tp-0`, …) for one-shot hover SFX. */
+let _hudUiHoverId = null;
+/** Last hovered start-menu control (`play`, `instructions`, `about`, `back`). */
+let _startMenuHoverId = null;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -140,6 +146,8 @@ function preload() {
   walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3");
   shineSound = loadSound("assets/sounds/shine.mp3");
   splashSound = loadSound("assets/sounds/splash.mp3");
+  uiHoverSound = loadSound("assets/sounds/hover.mp3");
+  uiClickSound = loadSound("assets/sounds/clicksound.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   winMusic = loadSound("assets/sounds/winmusic.mp3");
   // Load blob walk animation frames
@@ -200,6 +208,12 @@ function setup() {
   }
   if (splashSound && typeof splashSound.setVolume === "function") {
     splashSound.setVolume(0.85);
+  }
+  if (uiHoverSound && typeof uiHoverSound.setVolume === "function") {
+    uiHoverSound.setVolume(2.5);
+  }
+  if (uiClickSound && typeof uiClickSound.setVolume === "function") {
+    uiClickSound.setVolume(0.55);
   }
   if (winMusic && typeof winMusic.setVolume === "function") {
     winMusic.setVolume(0.5);
@@ -397,6 +411,7 @@ function returnToStartScreen() {
   menuScreen = "main";
   mainMenuPlayLabelReplay = true;
   mainMenuFadeInFramesLeft = MAIN_MENU_FADE_IN_FRAMES;
+  _startMenuHoverId = null;
 }
 
 function respawnPlayer() {
@@ -441,6 +456,101 @@ function unlockAudioAndStartLobbyMusic() {
     userStartAudio().then(() => tryStartLobbyMusic());
   } else {
     tryStartLobbyMusic();
+  }
+}
+
+function playUiClickSound() {
+  if (uiClickSound && typeof uiClickSound.play === "function") {
+    uiClickSound.play();
+  }
+}
+
+function getStartScreenHoveredButtonId() {
+  if (typeof menuScreen === "undefined") return null;
+  if (menuScreen === "main") {
+    for (const b of getMainMenuButtons()) {
+      if (pointInRect(mouseX, mouseY, b)) return b.id;
+    }
+  } else if (menuScreen === "instructions" || menuScreen === "about") {
+    if (pointInRect(mouseX, mouseY, getBackButtonRect())) return "back";
+  }
+  return null;
+}
+
+function updateStartScreenMenuHoverSound() {
+  const id = getStartScreenHoveredButtonId();
+  if (id !== _startMenuHoverId) {
+    _startMenuHoverId = id;
+    if (id && uiHoverSound && typeof uiHoverSound.play === "function") {
+      uiHoverSound.play();
+    }
+  }
+}
+
+function resetStartMenuHoverSoundState() {
+  _startMenuHoverId = null;
+}
+
+/** Matches HUD layout in `draw` / `mousePressed` (Inter 11, same bar/star geometry). */
+function getCoordButtonRectHud() {
+  const barY = 50;
+  const barH = 20;
+  const starY = barY + barH / 2;
+  const coordBtnW = 44;
+  const coordBtnH = 22;
+  return {
+    x: width - coordBtnW - 8,
+    y: starY + 22,
+    w: coordBtnW,
+    h: coordBtnH,
+  };
+}
+
+function getGameHudHoveredButtonId() {
+  if (!gameStarted || gameWon) return null;
+  const cr = getCoordButtonRectHud();
+  if (
+    mouseX >= cr.x &&
+    mouseX <= cr.x + cr.w &&
+    mouseY >= cr.y &&
+    mouseY <= cr.y + cr.h
+  ) {
+    return "coord";
+  }
+  const tpBtnY = height - 44;
+  const tpBtnH = 32;
+  const tpBtnPad = 8;
+  let tpBtnX = 16;
+  textFont("Inter");
+  textStyle(NORMAL);
+  textSize(11);
+  for (let i = 0; i < checkpointTpTargets.length; i++) {
+    const t = checkpointTpTargets[i];
+    const btnW = textWidth(t.label) + 20;
+    if (
+      mouseX >= tpBtnX &&
+      mouseX <= tpBtnX + btnW &&
+      mouseY >= tpBtnY &&
+      mouseY <= tpBtnY + tpBtnH
+    ) {
+      return `tp-${i}`;
+    }
+    tpBtnX += btnW + tpBtnPad;
+  }
+  return null;
+}
+
+function updateHudButtonHoverSound() {
+  if (!gameStarted || gameWon) {
+    _hudUiHoverId = null;
+    return;
+  }
+  const id = getGameHudHoveredButtonId();
+  if (id !== _hudUiHoverId) {
+    _hudUiHoverId = id;
+    if (id && uiHoverSound && typeof uiHoverSound.play === "function") {
+      uiHoverSound.play();
+    }
   }
 }
 
@@ -862,6 +972,8 @@ function draw() {
       winScreenTimer++;
     }
   }
+
+  updateHudButtonHoverSound();
 
   // Reset text settings
   textAlign(LEFT, TOP);
@@ -1347,6 +1459,7 @@ function mousePressed() {
     mouseY >= coordBtnY &&
     mouseY <= coordBtnY + coordBtnH
   ) {
+    playUiClickSound();
     showCoordsHud = !showCoordsHud;
     return;
   }
@@ -1368,6 +1481,7 @@ function mousePressed() {
       mouseY >= tpBtnY &&
       mouseY <= tpBtnY + tpBtnH
     ) {
+      playUiClickSound();
       player.x = t.x;
       player.y = t.y;
       player.vx = 0;

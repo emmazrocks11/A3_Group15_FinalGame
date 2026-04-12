@@ -29,7 +29,8 @@ Overall, the game aims to combine readable platforming with moment‑to‑moment
 
 **Running the game**
 
-Play the game here: https://c5ke.github.io/A2_Group15_MidTermGame/
+Play the game here: https://emmazrocks11.github.io/A3_Group15_FinalGame/
+
 
 **Controls**
 
@@ -68,7 +69,7 @@ Play the game here: https://c5ke.github.io/A2_Group15_MidTermGame/
 ---
 
 # Assets
-https://pixabay.com/sound-effects/film-special-effects-cartoon-jump-6462/
+
 ---
 
 ## References
