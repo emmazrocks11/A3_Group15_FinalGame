@@ -46,6 +46,12 @@ const WIN_TO_MENU_FADE_OUT_FRAMES = 32;
 /** Start menu fades in from black after the win transition. */
 const MAIN_MENU_FADE_IN_FRAMES = 52;
 
+/**
+ * Rain atmosphere: horizontal fade distance (world px) for one smooth ramp in and
+ * one smooth ramp out of the zone (flat full strength between zone edges).
+ */
+const RAIN_ATMO_APPROACH = 200;
+
 let allLevelsData;
 let levelIndex = 0;
 
@@ -516,10 +522,13 @@ function draw() {
   cam.clampToWorld(level.w, level.h);
 
   // --- draw ---
+  let rainAtmosphereBlend = 0;
   cam.begin();
   level.drawWorld();
   for (const z of rainZones) {
-    drawRainZone(z);
+    const lz = rainZoneLocalBlend(player.x, z);
+    rainAtmosphereBlend = max(rainAtmosphereBlend, lz);
+    drawRainZone(z, lz);
   }
   if (lightningZone) drawLightningZone(lightningZone);
   for (const cp of checkpointsDrawOrder) {
@@ -534,6 +543,10 @@ function draw() {
     if (cp.shouldDrawAfterPlayer()) cp.draw();
   }
   cam.end();
+
+  if (!gameWon && rainAtmosphereBlend > 0.0005) {
+    drawRainAtmospherePost(rainAtmosphereBlend, player, cam);
+  }
 
   // HUD - Level Name
   fill(40, 40, 50);
@@ -874,20 +887,128 @@ function drawWinScreen() {
 }
 
 /** Rain / lightning clouds: `rainycloud.png` centered in world space. */
-function drawRainyCloudImage(cx, cy, displayW, flipH, flipV) {
+function drawRainyCloudImage(cx, cy, displayW, flipH, flipV, alpha = 255) {
   if (!rainyCloudImg || rainyCloudImg.width <= 0) return;
   push();
+  if (alpha < 255) {
+    tint(255, alpha);
+  }
   translate(cx, cy);
   scale(flipH ? -1 : 1, flipV ? -1 : 1);
   imageMode(CENTER);
   const displayH = (rainyCloudImg.height / rainyCloudImg.width) * displayW;
   image(rainyCloudImg, 0, 0, displayW, displayH);
+  noTint();
   pop();
 }
 
+function smoothstep01(x) {
+  const t = constrain(x, 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * 0 = fully outside extended band; 1 = inside [startX, endX]. Single trapezoid: ramp in
+ * over [startX - fade, startX], flat through the zone, ramp out over [endX, endX + fade]
+ * (no separate inner-edge curve — avoids double transitions at each end).
+ */
+function rainZoneLocalBlend(px, z) {
+  if (!z || z.endX <= z.startX) return 0;
+  const a = z.startX;
+  const b = z.endX;
+  const w = b - a;
+  const fade = min(RAIN_ATMO_APPROACH, max(100, w * 0.36));
+
+  const lo = a - fade;
+  const hi = b + fade;
+  if (px <= lo || px >= hi) {
+    return 0;
+  }
+
+  let raw;
+  if (px < a) {
+    raw = (px - lo) / (a - lo);
+  } else if (px > b) {
+    raw = (hi - px) / (hi - b);
+  } else {
+    raw = 1;
+  }
+
+  return smoothstep01(constrain(raw, 0, 1));
+}
+
+/** Full-screen rain post (desat / grade / vignette / bloom) in view space after world draw. */
+function drawRainAtmospherePost(t, player, cam) {
+  if (t < 0.0005 || !player || !cam) return;
+  const tt = constrain(t, 0, 1);
+  const cx = constrain(player.x - cam.x, -60, VIEW_W + 60);
+  const cy = constrain(player.y - cam.y, -60, VIEW_H + 60);
+
+  push();
+  rectMode(CORNER);
+  noStroke();
+
+  push();
+  blendMode(MULTIPLY);
+  fill(
+    lerp(255, 92, tt),
+    lerp(255, 112, tt),
+    lerp(255, 138, tt),
+    lerp(0, 118, tt),
+  );
+  rect(0, 0, VIEW_W, VIEW_H);
+  pop();
+
+  push();
+  blendMode(MULTIPLY);
+  fill(172, 176, 190, lerp(0, 88, tt));
+  rect(0, 0, VIEW_W, VIEW_H);
+  pop();
+
+  const ctx = drawingContext;
+  push();
+  blendMode(MULTIPLY);
+  ctx.save();
+  const gx = VIEW_W * 0.5;
+  const gy = VIEW_H * 0.49;
+  const r0 = VIEW_H * 0.19;
+  const r1 = VIEW_H * 0.96;
+  const g = ctx.createRadialGradient(gx, gy, r0, gx, gy, r1);
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(0.42, `rgba(0,0,0,${0.15 * tt})`);
+  g.addColorStop(1, `rgba(0,0,0,${0.7 * tt})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.restore();
+  pop();
+
+  push();
+  blendMode(SCREEN);
+  const amp = tt * tt;
+  const bloomLayers = [
+    [26, 20 * amp],
+    [54, 15 * amp],
+    [92, 10 * amp],
+    [130, 6 * amp],
+  ];
+  for (const [r, a] of bloomLayers) {
+    fill(238, 248, 255, a);
+    ellipse(cx, cy - 6, r * 1.2, r * 0.92);
+  }
+  pop();
+
+  pop();
+  blendMode(BLEND);
+}
+
 /** Stable 0–3 variant from world position (which flips to apply). */
-function rainyCloudVariant(cx, zone, salt) {
-  const z = cx * 17.3 + zone.startX * 9.1 + zone.endX * 2.7 + salt * 401.0;
+function rainyCloudVariant(cx, zone, salt, index = 0) {
+  const z =
+    cx * 17.3 +
+    zone.startX * 9.1 +
+    zone.endX * 2.7 +
+    salt * 401.0 +
+    index * 179.0;
   return abs(floor(z)) % 4;
 }
 
@@ -904,10 +1025,13 @@ function rainCloudDrawX(baseCx, zone, displayW, index, swayHz = 0.0115) {
   return baseCx + sin(t * swayHz + index * 1.91 + baseCx * 0.0007) * amp;
 }
 
-function drawRainZone(zone) {
+function drawRainZone(zone, zoneBlend = 0) {
   const left = max(zone.startX, cam.x - 50);
   const right = min(zone.endX, cam.x + width + 50);
   if (left >= right) return;
+
+  const zb = constrain(zoneBlend, 0, 1);
+  const stormT = smoothstep01(constrain((zb - 0.1) / 0.64, 0, 1));
 
   noStroke();
 
@@ -936,7 +1060,8 @@ function drawRainZone(zone) {
     const swayHz =
       0.0059 + (abs(floor(baseCx * 0.079 + i * 101)) % 19) * 0.00072;
     const drawCx = rainCloudDrawX(baseCx, zone, dw, i, swayHz);
-    drawRainyCloudImage(drawCx, cy, dw, v % 2 === 1, v >= 2);
+    const cloudA = lerp(105, 255, pow(zb, 0.65));
+    drawRainyCloudImage(drawCx, cy, dw, v % 2 === 1, v >= 2, cloudA);
   }
 
   // Rain across the whole zone (world X from zone edge to edge; `left`/`right` are view-culled)
@@ -957,14 +1082,22 @@ function drawRainZone(zone) {
     wx += columnAdvance(wx);
   }
   while (wx <= right + 18) {
+    if (stormT < 0.52 && (abs(floor(wx * 0.21)) % 2) === 0) {
+      wx += columnAdvance(wx);
+      continue;
+    }
     if (wx >= left - 2 && wx <= right + 2) {
       const colOffset = (wx * 17 + floor(wx * 2.71)) % 100;
       const lanes = 10 + (abs(floor(wx * 0.883)) % 6);
+      const maxLanes = max(2, floor(lanes * lerp(0.26, 1, stormT)));
       const wxSkew = (abs(floor(wx)) % 29) * 0.35;
-      for (let d = 0; d < lanes; d++) {
+      const dropAlphaMul = lerp(0.18, 1, stormT) * lerp(0.35, 1, zb);
+      for (let d = 0; d < maxLanes; d++) {
         const phaseSeed =
           (wx * 29 + d * 53 + colOffset + (d * d * 7) % 101) % 997;
-        const spd = rainSpeed + (phaseSeed % 6) * 0.11;
+        const spd =
+          (rainSpeed + (phaseSeed % 6) * 0.11) *
+          lerp(0.55, 1, stormT);
         const phase =
           (frameCount * spd +
             phaseSeed +
@@ -976,12 +1109,15 @@ function drawRainZone(zone) {
         const xJitter = ((phaseSeed * 11 + d * 23) % 21) - 10;
         const xWobble = ((wx * 3 + phaseSeed * 5) % 9) - 4;
         const x = wx + xJitter + xWobble;
-        const dropH = 8 + (phaseSeed % 5);
-        const dropW = 1.8 + (phaseSeed % 6) * 0.28;
-        const alpha = 108 + ((phaseSeed + floor(wx * 0.12)) % 78);
+        const dropH =
+          (8 + (phaseSeed % 5)) * lerp(0.75, 1, stormT);
+        const dropW =
+          (1.8 + (phaseSeed % 6) * 0.28) * lerp(0.85, 1, stormT);
+        const alpha =
+          (108 + ((phaseSeed + floor(wx * 0.12)) % 78)) * dropAlphaMul;
         fill(200, 220, 240, alpha);
         ellipse(x, y, dropW, dropH);
-        fill(255, 255, 255, alpha * 0.32);
+        fill(255, 255, 255, alpha * 0.3);
         ellipse(
           x - dropW * 0.2,
           y - dropH * 0.2,
