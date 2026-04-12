@@ -197,7 +197,7 @@ class WorldLevel {
           const shoreCoverTopMaxY = WORLD_WATER_TOP_Y - GRASSY_GROUND_SHORE_COVER_PX;
           drawY = min(drawY, shoreCoverTopMaxY);
         }
-        drawY -= GRASSY_GROUND_EXTRA_UP_PX;
+        drawY -= GRASSY_GROUND_EXTRA_UP_PX + p.grassyVisualLift;
         const screenBottomWorldY = camY + viewH;
         const minGrassDrawH =
           p.h + GRASSY_GROUND_DEST_EXTRA_BOTTOM + GRASSY_GROUND_EXTRA_DRAW_HEIGHT;
