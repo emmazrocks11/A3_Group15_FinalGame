@@ -39,7 +39,6 @@ class Checkpoint {
     this.reached = false;
     this.bloomT = 0;
     this.bloomDuration = 52;
-    this.sunWorldY = 64;
   }
 
   prerequisiteMet() {
@@ -127,7 +126,9 @@ class Checkpoint {
 
   drawLightBeamAndSun() {
     const budTipY = -14;
-    const topY = this.sunWorldY - this.y;
+    const camTop =
+      typeof cam !== "undefined" && cam ? cam.y : 0;
+    const topY = camTop - this.y;
     const pulse = 0.82 + 0.18 * sin(frameCount * 0.055);
 
     push();
