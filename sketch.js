@@ -84,6 +84,8 @@ const RAIN_ATMO_APPROACH = 200;
 const WATER_SPLASH_SOUND_Y = 430;
 /** After passing `deathY`, wait this long before `respawnPlayer()`. */
 const FALL_DEATH_RESPAWN_DELAY_MS = 500;
+/** Frames of scale / color punch on the HUD star count after collecting a star. */
+const STAR_COUNT_HUD_FX_FRAMES = 22;
 
 let allLevelsData;
 let levelIndex = 0;
@@ -127,6 +129,8 @@ let mainMenuPlayLabelReplay = false;
 /** @type {"main"|"instructions"|"about"} */
 let menuScreen = "main";
 let energyBoostTimer = 0;
+/** >0 while the star counter HUD plays its collect punch (counts down in `draw`). */
+let starCountHudFxFrames = 0;
 let checkpoint = null;
 let checkpoint2 = null;
 let checkpoint3 = null;
@@ -298,6 +302,7 @@ function loadLevel(i) {
 
   // Initialize stars from JSON (full reset on level load)
   totalStarsCollected = 0;
+  starCountHudFxFrames = 0;
   stars = [];
   if (collectiblesData && collectiblesData.stars) {
     for (let s of collectiblesData.stars) {
@@ -651,6 +656,7 @@ function draw() {
           player.applyStarEnergyBonus(player.starsCollected);
           player.energy = player.maxEnergy;
           energyBoostTimer = 60;
+          starCountHudFxFrames = STAR_COUNT_HUD_FX_FRAMES;
         }
       }
 
@@ -856,14 +862,31 @@ function draw() {
   textStyle(BOLD);
   textSize(28);
   textAlign(RIGHT, CENTER); // Center vertically with the bar
-  fill(255, 215, 0);
-  noStroke();
 
   const starY = barY + barH / 2; // Same vertical center as the energy bar
-  text("⭐", width - 45, starY);
+  const hudStarR = 12;
+  const hudStarCx = width - 95;
+  Star.drawShapeAt(hudStarCx, starY, hudStarR, 0);
 
-  fill(40, 40, 50);
-  text(player.starsCollected, width - 18, starY + 2); // Slight offset for visual alignment with text baseline
+  const starTx = width - 56;
+  const starTy = starY + 2;
+  if (starCountHudFxFrames > 0) {
+    const u = starCountHudFxFrames / STAR_COUNT_HUD_FX_FRAMES;
+    const punch = 1 + 0.58 * pow(u, 1.35);
+    const goldMix = pow(u, 0.75);
+    push();
+    translate(starTx, starTy);
+    scale(punch);
+    fill(lerpColor(color(40, 40, 50), color(255, 200, 55), goldMix));
+    noStroke();
+    text(player.starsCollected, 0, 0);
+    pop();
+    starCountHudFxFrames--;
+  } else {
+    fill(40, 40, 50);
+    noStroke();
+    text(player.starsCollected, starTx, starTy);
+  }
 
   // World coordinates + toggle (top-right, below star row)
   const coordBtnW = 44;

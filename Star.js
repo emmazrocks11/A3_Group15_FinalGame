@@ -1,4 +1,29 @@
 class Star {
+  /**
+   * Same 5-point star as collectibles (gold fill, orange stroke), centered at `cx`,`cy`.
+   * @param {number} cx
+   * @param {number} cy
+   * @param {number} r outer radius
+   * @param {number} [angleRad=0] rotation
+   */
+  static drawShapeAt(cx, cy, r, angleRad = 0) {
+    push();
+    translate(cx, cy);
+    rotate(angleRad);
+    fill("gold");
+    stroke("orange");
+    strokeWeight(max(1, r * 0.14));
+    beginShape();
+    for (let i = 0; i < 10; i++) {
+      const radius = i % 2 === 0 ? r : r / 2;
+      // −HALF_PI so one outer tip points straight up (symmetric like a typical ★)
+      const a = TWO_PI * (i / 10) - HALF_PI;
+      vertex(cos(a) * radius, sin(a) * radius);
+    }
+    endShape(CLOSE);
+    pop();
+  }
+
   constructor(x, y) {
     this.x = x;
     this.y = y;
@@ -24,24 +49,6 @@ class Star {
 
   draw() {
     if (this.collected) return;
-
-    push();
-    translate(this.x, this.y);
-    rotate(this.angle);
-    fill("gold");
-    stroke("orange");
-    strokeWeight(2);
-    
-    // Draw a star shape
-    beginShape();
-    for (let i = 0; i < 10; i++) {
-      let radius = i % 2 === 0 ? this.r : this.r / 2;
-      let angle = TWO_PI * i / 10;
-      let sx = cos(angle) * radius;
-      let sy = sin(angle) * radius;
-      vertex(sx, sy);
-    }
-    endShape(CLOSE);
-    pop();
+    Star.drawShapeAt(this.x, this.y, this.r, this.angle);
   }
 }
