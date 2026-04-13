@@ -20,7 +20,6 @@ You control a soft blob character moving through increasingly complex environmen
 - **Checkpoints as sunflowers**: Reaching a sunflower plants a new respawn point and briefly shows a large cue word such as **FOCUS** or **BALANCE**, emphasizing the mental strategies players use to cope.
 - **Rain and weather**: Moving through rain clouds slows the character, representing environmental or sensory load that makes everything feel harder.
 
-
 Overall, the game aims to combine readable platforming with moment‑to‑moment changes in control, prompting players to notice how much cognitive effort “simple” movement can demand.
 
 ---
@@ -30,7 +29,6 @@ Overall, the game aims to combine readable platforming with moment‑to‑moment
 **Running the game**
 
 Play the game here: https://emmazrocks11.github.io/A3_Group15_FinalGame/
-
 
 **Controls**
 
@@ -52,13 +50,13 @@ Play the game here: https://emmazrocks11.github.io/A3_Group15_FinalGame/
 **Post‑Playtest**
 
 - **Energy bar**: Changed color to contrast better against blue sky, added shaking effect when energy bar lower than 70%
+- **Player Rest**: player must now stop moving entirely in order to recover energy
+- **Glitch**: slight delay has been added to player movement inputs throughout the entire game
 - **Level change**: Made focus level less difficult
 - **Effect**: Added rain ambiance to emphasize environment change
-
-
-
-
-
+- **Platform Design**: Added platform grassblocks to change platform UI
+- **Platform landing mech**: Offset the y value of platform grassblocks to ensure character lands above the platform
+- **Platform landing mech**: Offset the y value of platform grassblocks to ensure character lands above the platform
 
 ---
 
@@ -69,9 +67,10 @@ Play the game here: https://emmazrocks11.github.io/A3_Group15_FinalGame/
 ---
 
 # Assets
+
 https://pixabay.com/sound-effects/film-special-effects-cartoon-jump-6462/
-https://pixabay.com/sound-effects/film-special-effects-minimalist-button-hover-sound-effect-399749/ 
-https://pixabay.com/sound-effects/technology-sound-of-mouse-click-4-478760/ 
+https://pixabay.com/sound-effects/film-special-effects-minimalist-button-hover-sound-effect-399749/
+https://pixabay.com/sound-effects/technology-sound-of-mouse-click-4-478760/
 https://pixabay.com/sound-effects/film-special-effects-water-splash-199583/
 https://pixabay.com/sound-effects/musical-cute-music-26476/
 https://pixabay.com/sound-effects/nature-rain-sound-188158/
