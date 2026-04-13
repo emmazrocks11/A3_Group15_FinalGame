@@ -18,6 +18,35 @@ Learning goals:
 
 const VIEW_W = 800;
 const VIEW_H = 480;
+
+/** Ordered walk cycle for the player (assets/images). */
+const PLAYER_WALK_FRAME_FILES = [
+  "1.png",
+  "2.png",
+  "3.png",
+  "4.png",
+  "4-1.png",
+  "5.png",
+  "6.png",
+  "7.png",
+  "8.png",
+  "9.png",
+  "10.png",
+  "11.png",
+  "12.png",
+  "13.png",
+  "14.png",
+  "15.png",
+  "16.png",
+  "17.png",
+  "18.png",
+];
+const PLAYER_JUMP_FRAME_FILES = [
+  "jump2 1.png",
+  "jump3 1.png",
+  "jump4 1.png",
+  "jump5 1.png",
+];
 /** First drop-in spawn: shift left from `level.start.x` (JSON stays canonical). */
 const INITIAL_SPAWN_X_OFFSET = 30;
 
@@ -73,8 +102,10 @@ let uiHoverSound;
 let uiClickSound;
 let lobbyMusic;
 let winMusic;
-let walk1Img;
-let walk2Img;
+/** @type {p5.Image[]} */
+let playerWalkFrames = [];
+/** @type {p5.Image[]} */
+let playerJumpFrames = [];
 let seedImg;
 let grow1Img;
 let grow2Img;
@@ -150,9 +181,12 @@ function preload() {
   uiClickSound = loadSound("assets/sounds/clicksound.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   winMusic = loadSound("assets/sounds/winmusic.mp3");
-  // Load blob walk animation frames
-  walk1Img = loadImage("assets/images/walk1.png");
-  walk2Img = loadImage("assets/images/walk2.png");
+  playerWalkFrames = PLAYER_WALK_FRAME_FILES.map((f) =>
+    loadImage("assets/images/" + f),
+  );
+  playerJumpFrames = PLAYER_JUMP_FRAME_FILES.map((f) =>
+    loadImage("assets/images/" + f),
+  );
   seedImg = loadImage("assets/images/seed.png");
   grow1Img = loadImage("assets/images/grow1.png");
   grow2Img = loadImage("assets/images/grow2.png");
@@ -251,9 +285,10 @@ function loadLevel(i) {
   }
   player = new BlobPlayer(
     jumpSound,
-    [walk1Img, walk2Img],
+    playerWalkFrames,
     walkStepGrassL,
     walkStepGrassR,
+    playerJumpFrames,
   );
   player.spawnFromLevel(level);
 
@@ -415,10 +450,14 @@ function returnToStartScreen() {
 }
 
 function respawnPlayer() {
-  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-    walkSound.stop();
-  }
-  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
+  stopWalkStepSfx();
+  player = new BlobPlayer(
+    jumpSound,
+    playerWalkFrames,
+    walkStepGrassL,
+    walkStepGrassR,
+    playerJumpFrames,
+  );
   if (respawnPoint) {
     const dropHeight = 220;
     player.spawnAt(respawnPoint.x, respawnPoint.y - dropHeight);
@@ -674,9 +713,7 @@ function draw() {
     if (!gameWon && player.y - player.r > level.deathY) {
       if (fallDeathRespawnAtMs === null) {
         fallDeathRespawnAtMs = millis() + FALL_DEATH_RESPAWN_DELAY_MS;
-        if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-          walkSound.stop();
-        }
+        stopWalkStepSfx();
       }
     }
   }

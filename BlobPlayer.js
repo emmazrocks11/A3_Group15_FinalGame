@@ -5,7 +5,7 @@
 const BLOB_GROUND_DRAW_DROP_PX = 6;
 
 class BlobPlayer {
-  constructor(jumpSound, walkFrames, walkStepL, walkStepR) {
+  constructor(jumpSound, walkFrames, walkStepL, walkStepR, jumpFrames) {
     this.x = 0;
     this.y = 0;
     this.r = 26;
@@ -60,7 +60,7 @@ class BlobPlayer {
     this._walkStepNextLeft = true;
     this._nextWalkStepAllowedMs = 0;
     /** Play grass step every N walk-frame advances (sprite still updates every advance). */
-    this._walkSfxStride = 2;
+    this._walkSfxStride = walkFrames && walkFrames.length > 8 ? 5 : 2;
     this._walkSfxStrideCounter = 0;
     /** Minimum ms between step plays (avoids rapid L/R machine-gun). */
     this.walkStepMinGapMs = 130;
@@ -68,9 +68,12 @@ class BlobPlayer {
 
     // Sprite animation
     this.walkFrames = walkFrames || [];
+    this.jumpFrames = jumpFrames || [];
     this.animFrame = 0;
     this.animTimer = 0;
-    this.animSpeed = 10; // frames per sprite frame
+    // Frames per walk-cel advance (lower = faster cycle)
+    this.animSpeed =
+      this.walkFrames.length > 8 ? 2 : this.walkFrames.length > 2 ? 3 : 10;
     this.facingDir = 1; // 1 = right, -1 = left
 
     this._intentMove = 0;
@@ -388,16 +391,35 @@ class BlobPlayer {
 
     // If sprite frames exist, use them instead of wobble blob
     if (this.walkFrames && this.walkFrames.length > 0) {
-      const img = this.walkFrames[this.animFrame % this.walkFrames.length];
-      if (img) {
+      let img = null;
+      const jumpArt =
+        !this.onGround &&
+        this.jumpFrames &&
+        this.jumpFrames.length > 0 &&
+        this.jumpFrames.some((j) => j && j.width > 0);
+      if (jumpArt) {
+        const n = this.jumpFrames.length;
+        const up = this.jumpV * 0.88;
+        const down = max(12, this.gravity * 42);
+        const ji = Math.round(
+          constrain(map(this.vy, up, down, 0, n - 1), 0, n - 1),
+        );
+        img = this.jumpFrames[ji];
+      }
+      if (!img || !img.width) {
+        img = this.walkFrames[this.animFrame % this.walkFrames.length];
+      }
+      if (img && img.width && img.height > 0) {
         push();
         imageMode(CENTER);
-        // Draw sprite sized like the blob but slightly taller and ~1cm bigger (≈10px) overall
-        const width = this.r * 2 + 15;
-        const height = this.r * 2.4 + 15;
+        // Scale from native aspect ratio (no stretch): match ~collision height, width follows art
+        const targetH = (this.r * 2 + 15) * 1.5;
+        const uniformScale = targetH / img.height;
+        const dw = img.width * uniformScale;
+        const dh = targetH;
         translate(px, pyDraw);
-        scale(this.facingDir, 1); // flip horizontally when moving left
-        image(img, 0, 0, width, height);
+        scale(this.facingDir, 1);
+        image(img, 0, 0, dw, dh);
         pop();
         if (sweatActive) {
           this.drawSweatBubbles(px, pyDraw, bubbleStrain);
