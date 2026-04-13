@@ -569,6 +569,7 @@ function resetStartMenuHoverSoundState() {
 }
 
 /** Matches HUD layout in `draw` / `mousePressed` (Inter 11, same bar/star geometry). */
+/*
 function getCoordButtonRectHud() {
   const barY = 50;
   const barH = 20;
@@ -582,9 +583,12 @@ function getCoordButtonRectHud() {
     h: coordBtnH,
   };
 }
+*/
 
 function getGameHudHoveredButtonId() {
   if (!gameStarted || gameWon) return null;
+  return null;
+  /*
   const cr = getCoordButtonRectHud();
   if (
     mouseX >= cr.x &&
@@ -615,6 +619,7 @@ function getGameHudHoveredButtonId() {
     tpBtnX += btnW + tpBtnPad;
   }
   return null;
+  */
 }
 
 function updateHudButtonHoverSound() {
@@ -932,6 +937,7 @@ function draw() {
     text(player.starsCollected, starTx, starTy);
   }
 
+  /*
   // World coordinates + toggle (top-right, below star row)
   const coordBtnW = 44;
   const coordBtnH = 22;
@@ -1010,6 +1016,7 @@ function draw() {
     textAlign(LEFT, TOP);
     tpBtnX += btnW + tpBtnPad;
   }
+  */
 
   // Checkpoint message (fade in, hold, fade out)
   if (checkpointMessage) {
@@ -1557,11 +1564,13 @@ function keyPressed() {
     }
     loadLevel(levelIndex);
   }
+  /*
   if (key === "c" || key === "C") {
     if (gameStarted) {
       showCoordsHud = !showCoordsHud;
     }
   }
+  */
 }
 
 function mousePressed() {
@@ -1574,6 +1583,7 @@ function mousePressed() {
     return;
   }
 
+  /*
   const barY = 50;
   const barH = 20;
   const starY = barY + barH / 2;
@@ -1619,6 +1629,7 @@ function mousePressed() {
     }
     tpBtnX += btnW + tpBtnPad;
   }
+  */
 }
 
 function touchStarted() {
