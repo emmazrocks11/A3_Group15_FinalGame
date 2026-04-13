@@ -3,6 +3,8 @@
  * player this many px lower so feet line up with the art (collision unchanged).
  */
 const BLOB_GROUND_DRAW_DROP_PX = 6;
+/** Walk-strip index for `11.png` when grounded and not moving (matches `PLAYER_WALK_FRAME_FILES`). */
+const IDLE_WALK_FRAME_INDEX = 11;
 
 class BlobPlayer {
   constructor(jumpSound, walkFrames, walkStepL, walkStepR, jumpFrames) {
@@ -78,6 +80,8 @@ class BlobPlayer {
 
     this._intentMove = 0;
     this._appliedMove = 0;
+    /** Grounded + still: walks one strip index per frame toward `IDLE_WALK_FRAME_INDEX`; null when moving/in air. */
+    this._idleSettleIndex = null;
   }
 
   spawnFromLevel(level) {
@@ -92,6 +96,7 @@ class BlobPlayer {
     this.ridingPlatform = null;
     this.moveInputBuffer = [];
     this.jumpPressQueue = [];
+    this._idleSettleIndex = null;
 
     this.gravity = level.gravity;
     this.jumpV = level.jumpV;
@@ -111,6 +116,7 @@ class BlobPlayer {
     this.ridingPlatform = null;
     this.moveInputBuffer = [];
     this.jumpPressQueue = [];
+    this._idleSettleIndex = null;
   }
 
   energyLagFrames() {
@@ -293,6 +299,7 @@ class BlobPlayer {
       this.onGround &&
       (Math.abs(this.vx) > 0.1 || Math.abs(this._appliedMove) > 0);
     if (movingOnGround) {
+      this._idleSettleIndex = null;
       this.animTimer++;
       if (this.animTimer >= this.animSpeed) {
         this.animTimer = 0;
@@ -318,13 +325,30 @@ class BlobPlayer {
       }
     } else {
       this.animTimer = 0;
-      this.animFrame = 0;
       this._walkSfxStrideCounter = 0;
       if (this.walkStepL && this.walkStepL.isPlaying && this.walkStepL.isPlaying()) {
         this.walkStepL.stop();
       }
       if (this.walkStepR && this.walkStepR.isPlaying && this.walkStepR.isPlaying()) {
         this.walkStepR.stop();
+      }
+
+      const n = max(1, this.walkFrames.length);
+      const stillOnGround =
+        this.onGround &&
+        Math.abs(this.vx) <= 0.1 &&
+        Math.abs(this._appliedMove) <= 0.1;
+      if (stillOnGround) {
+        if (this._idleSettleIndex === null) {
+          this._idleSettleIndex = this.animFrame % n;
+        }
+        const tgt = constrain(IDLE_WALK_FRAME_INDEX, 0, n - 1);
+        if (this._idleSettleIndex < tgt) this._idleSettleIndex++;
+        else if (this._idleSettleIndex > tgt) this._idleSettleIndex--;
+        this.animFrame = this._idleSettleIndex;
+      } else {
+        this._idleSettleIndex = null;
+        this.animFrame = 0;
       }
     }
 
@@ -407,13 +431,22 @@ class BlobPlayer {
         img = this.jumpFrames[ji];
       }
       if (!img || !img.width) {
-        img = this.walkFrames[this.animFrame % this.walkFrames.length];
+        const n = max(1, this.walkFrames.length);
+        const stillOnGround =
+          this.onGround &&
+          Math.abs(this.vx) <= 0.1 &&
+          Math.abs(this._appliedMove) <= 0.1;
+        const wi =
+          stillOnGround && this._idleSettleIndex !== null
+            ? this._idleSettleIndex
+            : this.animFrame % n;
+        img = this.walkFrames[wi];
       }
       if (img && img.width && img.height > 0) {
         push();
         imageMode(CENTER);
         // Scale from native aspect ratio (no stretch): match ~collision height, width follows art
-        const targetH = (this.r * 2 + 15) * 1.5;
+        const targetH = (this.r * 2 + 15) * 1.67;
         const uniformScale = targetH / img.height;
         const dw = img.width * uniformScale;
         const dh = targetH;
