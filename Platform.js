@@ -24,7 +24,10 @@ class Platform {
     this.minHiddenFrames = options.minHiddenFrames ?? 30;
     this.maxHiddenFrames = options.maxHiddenFrames ?? 140;
     this.visibleDuration = options.visibleDuration || 120; // frames
-    this.hiddenDuration = options.hiddenDuration || 120;   // frames
+    this.hiddenDuration = min(
+      options.hiddenDuration || 120,
+      Platform.maxHiddenPhaseFrames,
+    ); // frames
     this.fadeFrames = options.fadeFrames || 20;           // frames for fade in/out
     this.timer = options.timerOffset || 0;
     this.isVisible = true;
@@ -32,9 +35,8 @@ class Platform {
     this.phaseEnd = 1;
     /** Blink/cycle runs only after this platform has intersected the camera view once. */
     this.disappearCycleStarted = false;
-    /** Set by loadLevel: first disappearing tiles after rain get one longer first visible phase. */
-    this.longFirstVisiblePhase = options.longFirstVisiblePhase || false;
-    this.firstLongIntroDone = false;
+    /** After first on-screen visible phase completes, `randomBlink` uses JSON min/max timings. */
+    this.firstIntroVisiblePhaseDone = false;
 
     /** When true, WorldLevel draws `grassyGroundImg` stretched to the platform rect instead of tile strips. */
     this.useGrassyGroundPng = options.grassyGround === true;
@@ -47,6 +49,13 @@ class Platform {
         random(this.minVisibleFrames, this.maxVisibleFrames + 1),
       );
     }
+  }
+
+  /** ~60fps frame cap: hidden stretch never longer than ~5s wall clock. */
+  static maxHiddenPhaseFrames = 5 * 60;
+
+  static clampHiddenPhaseLength(frames) {
+    return min(max(1, frames), Platform.maxHiddenPhaseFrames);
   }
 
   /** World-space platform rect overlaps the camera view (world coords). */
@@ -92,43 +101,44 @@ class Platform {
         }
         this.disappearCycleStarted = true;
         if (this.randomBlink) {
-          if (this.longFirstVisiblePhase && !this.firstLongIntroDone) {
+          if (!this.firstIntroVisiblePhaseDone) {
             this.isVisible = true;
-            const introLo = max(
-              round(this.minVisibleFrames * 2.45),
-              this.minVisibleFrames + 55,
-            );
-            const introHi = max(
-              round(this.maxVisibleFrames * 2.25),
-              introLo + 30,
-            );
+            const hz = 60;
+            const introLo = 4 * hz;
+            const introHi = 7 * hz;
             this.phaseEnd = floor(random(introLo, introHi + 1));
             this.timer = 0;
           } else {
             this.isVisible = random() < 0.62;
             this.phaseEnd = this.isVisible
               ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
-              : floor(random(this.minHiddenFrames, this.maxHiddenFrames + 1));
+              : Platform.clampHiddenPhaseLength(
+                  floor(
+                    random(this.minHiddenFrames, this.maxHiddenFrames + 1),
+                  ),
+                );
             this.timer = floor(random(0, this.phaseEnd));
           }
+        } else {
+          this.timer = 0;
         }
       }
 
       if (this.randomBlink) {
         this.timer++;
         if (this.timer >= this.phaseEnd) {
-          if (
-            this.longFirstVisiblePhase &&
-            !this.firstLongIntroDone &&
-            this.isVisible
-          ) {
-            this.firstLongIntroDone = true;
+          if (!this.firstIntroVisiblePhaseDone && this.isVisible) {
+            this.firstIntroVisiblePhaseDone = true;
           }
           this.isVisible = !this.isVisible;
           this.timer = 0;
           this.phaseEnd = this.isVisible
             ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
-            : floor(random(this.minHiddenFrames, this.maxHiddenFrames + 1));
+            : Platform.clampHiddenPhaseLength(
+                floor(
+                  random(this.minHiddenFrames, this.maxHiddenFrames + 1),
+                ),
+              );
         }
         const visDur = this.phaseEnd;
         if (!this.isVisible) {
