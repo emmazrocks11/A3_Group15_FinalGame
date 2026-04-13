@@ -1,6 +1,11 @@
 /**
  * When grounded on a platform whose grass art is shifted up (`grassyVisualLift`), draw the
  * player this many px lower so feet line up with the art (collision unchanged).
+ *
+ * README.md References — design intent (not clinical simulation):
+ * [1][5] ABI / learning implications; [6] fatigue and effort; [9] locomotor control / adaptation
+ * after brain injury inform energy cost, input lag, and jump reliability — see `movementStrain`,
+ * `energyLagFrames`, `drawSweatBubbles`.
  */
 const BLOB_GROUND_DRAW_DROP_PX = 6;
 /** Walk-strip index for `11.png` when grounded and not moving (matches `PLAYER_WALK_FRAME_FILES`). */
@@ -32,7 +37,7 @@ class BlobPlayer {
     this.points = 48;
     this.wobbleFreq = 0.9;
 
-    // Energy system
+    // Energy system (README [5][6]: effort / fatigue framing)
     this.baseMaxEnergy = 200;
     this.maxEnergy = this.baseMaxEnergy;
     this.energy = this.maxEnergy;
@@ -48,7 +53,7 @@ class BlobPlayer {
     this.ridingPlatform = null;
     this.inRain = false;
 
-    // Low energy: delayed horizontal input (worse when energy is lower)
+    // Low energy: delayed horizontal input (README [9] locomotor adaptation; playtest “lag” note)
     this.maxMoveLagFrames = 18;
     this.moveInputBuffer = [];
     this.jumpPressQueue = [];
@@ -146,7 +151,7 @@ class BlobPlayer {
       this.energy = max(0, this.energy - this.energyJumpCost);
       this.ridingPlatform = null;
       if (this.jumpSound) {
-        this.jumpSound.play();
+        this.jumpSound.play(); // README [10] (loaded in sketch.js)
       }
     } else if (
       !this.onGround &&
@@ -159,7 +164,7 @@ class BlobPlayer {
       this.energy = max(0, this.energy - this.energyDoubleJumpCost);
       this.ridingPlatform = null;
       if (this.jumpSound) {
-        this.jumpSound.play();
+        this.jumpSound.play(); // README [10]
       }
     }
   }
@@ -294,7 +299,7 @@ class BlobPlayer {
 
     this.t += this.tSpeed;
 
-    // Walk animation every animSpeed frames; grass SFX less often + min gap between plays
+    // Walk animation; grass SFX README [12] (alternating L/R), throttled by stride + min gap
     const movingOnGround =
       this.onGround &&
       (Math.abs(this.vx) > 0.1 || Math.abs(this._appliedMove) > 0);
@@ -367,6 +372,7 @@ class BlobPlayer {
   /**
    * Cartoon sweat bubbles: under 70% energy normally; in rain, whenever energy is not full.
    * Intensity follows movement strain (boosted in rain when energy is still high).
+   * README [6] — fatigue / exertion metaphor.
    */
   drawSweatBubbles(cx, cy, strain) {
     const n = 5;

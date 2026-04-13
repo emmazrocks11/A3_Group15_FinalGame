@@ -406,6 +406,7 @@ function drawAboutAbiScreen() {
   const tx = panelX + 28;
   let ty = panelY + 64;
   const bodyW = panelW - 56;
+  // README [1] ABI overview; [2][3] community stories context; [5] learning implications
   const paragraphs = [
     "Acquired brain injury (ABI) affects how people experience energy, focus, and control in everyday life. Symptoms and recovery vary widely from person to person.",
     "This game is not a medical model of ABI. It is a playful way to notice how much cognitive and physical effort simple movement can take when energy and attention feel limited — similar themes to what some people navigate after brain injury.",

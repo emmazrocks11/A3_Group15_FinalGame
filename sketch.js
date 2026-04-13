@@ -14,6 +14,10 @@ Learning goals:
 - Use a dedicated Camera2D class for smooth horizontal tracking
 - Support multiple levels and easy tuning through data files
 - Explore scalable project architecture for larger games
+
+README.md — References: royalty-free audio credits are cited at each `loadSound` in `preload()`
+([7][8][10][11][12][13][15][16][18]); design sources for movement/energy themes are noted in `BlobPlayer.js`
+([1][5][6][9]) and About-copy in `StartScreen.js` ([1][2][3][5]). Pixabay as a source: [4].
 */
 
 const VIEW_W = 800;
@@ -183,18 +187,18 @@ function preload() {
   // Load mountain layer to draw on top of the sky
   mountainImg = loadImage("assets/images/mountain.png");
   rainyCloudImg = loadImage("assets/images/rainycloud.png");
-  // Load jump sound effect
-  jumpSound = loadSound("assets/sounds/jumpsound.mp3");
-  walkStepGrassL = loadSound("assets/sounds/sfx_step_grass_l.mp3");
-  walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3");
-  shineSound = loadSound("assets/sounds/shine.mp3");
-  starCollectSound = loadSound("assets/sounds/starcollect.mp3");
-  rainAmbienceSound = loadSound("assets/sounds/rain.mp3");
-  splashSound = loadSound("assets/sounds/splash.mp3");
-  uiHoverSound = loadSound("assets/sounds/hover.mp3");
-  uiClickSound = loadSound("assets/sounds/clicksound.mp3");
-  lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
-  winMusic = loadSound("assets/sounds/winmusic.mp3");
+  // README References — audio (see README.md #References)
+  jumpSound = loadSound("assets/sounds/jumpsound.mp3"); // [10] Cartoon jump (Pixabay)
+  walkStepGrassL = loadSound("assets/sounds/sfx_step_grass_l.mp3"); // [12] Grass foot steps (OpenGameArt)
+  walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3"); // [12]
+  shineSound = loadSound("assets/sounds/shine.mp3"); // [7] Shine 11 (Pixabay)
+  starCollectSound = loadSound("assets/sounds/starcollect.mp3"); // [18] Video Game – Bonus (Pixabay)
+  rainAmbienceSound = loadSound("assets/sounds/rain.mp3"); // [8] Rain ambience (Pixabay)
+  splashSound = loadSound("assets/sounds/splash.mp3"); // [16] Water splash (Pixabay)
+  uiHoverSound = loadSound("assets/sounds/hover.mp3"); // [13] Minimalist button hover (Pixabay)
+  uiClickSound = loadSound("assets/sounds/clicksound.mp3"); // [15] Mouse click (Pixabay)
+  lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3"); // [11] Cute music / menu loop (Pixabay)
+  winMusic = loadSound("assets/sounds/winmusic.mp3"); // Win screen loop; royalty-free (README [4] Pixabay)
   playerWalkFrames = PLAYER_WALK_FRAME_FILES.map((f) =>
     loadImage("assets/images/" + f),
   );
@@ -282,6 +286,7 @@ function windowResized() {
 }
 
 function stopWalkStepSfx() {
+  // README [12] — grass footstep pair
   for (const s of [walkStepGrassL, walkStepGrassR]) {
     if (s && s.isPlaying && s.isPlaying()) s.stop();
   }
@@ -294,6 +299,7 @@ function stopRainAmbienceSound() {
 }
 
 function updateRainZoneAmbienceSound() {
+  // README [8] — rain ambience asset; loops while `player.inRain`
   if (!rainAmbienceSound || typeof rainAmbienceSound.loop !== "function") return;
   const want =
     typeof gameStarted !== "undefined" &&
@@ -519,6 +525,7 @@ function respawnPlayer() {
  * On first load the context is suspended until a user gesture — see unlockAudioAndStartLobbyMusic().
  */
 function tryStartLobbyMusic() {
+  // README [11] — menu / lobby music
   if (gameStarted || !lobbyMusic) return;
   if (lobbyMusic.isPlaying && lobbyMusic.isPlaying()) return;
   if (typeof lobbyMusic.setVolume === "function") {
@@ -537,6 +544,7 @@ function unlockAudioAndStartLobbyMusic() {
 }
 
 function playUiClickSound() {
+  // README [15]
   if (uiClickSound && typeof uiClickSound.play === "function") {
     uiClickSound.play();
   }
@@ -558,6 +566,7 @@ function updateStartScreenMenuHoverSound() {
   const id = getStartScreenHoveredButtonId();
   if (id !== _startMenuHoverId) {
     _startMenuHoverId = id;
+    // README [13]
     if (id && uiHoverSound && typeof uiHoverSound.play === "function") {
       uiHoverSound.play();
     }
@@ -630,6 +639,7 @@ function updateHudButtonHoverSound() {
   const id = getGameHudHoveredButtonId();
   if (id !== _hudUiHoverId) {
     _hudUiHoverId = id;
+    // README [13]
     if (id && uiHoverSound && typeof uiHoverSound.play === "function") {
       uiHoverSound.play();
     }
@@ -699,6 +709,7 @@ function draw() {
           player.energy = player.maxEnergy;
           energyBoostTimer = 60;
           starCountHudFxFrames = STAR_COUNT_HUD_FX_FRAMES;
+          // README [18]
           if (starCollectSound && typeof starCollectSound.play === "function") {
             starCollectSound.play();
           }
@@ -713,7 +724,7 @@ function draw() {
         player.vy > 0 &&
         splashSound
       ) {
-        splashSound.play();
+        splashSound.play(); // README [16]
       }
       _prevPlayerWorldBottom = feetY;
     } else {
@@ -728,7 +739,7 @@ function draw() {
       const wasReached = cp.reached;
       if (!cp.update(player)) continue;
       if (!wasReached && cp.reached && shineSound) {
-        shineSound.play();
+        shineSound.play(); // README [7]
       }
       respawnPoint = { x: cp.x + 2, y: cp.y - player.r };
       if (
@@ -758,7 +769,7 @@ function draw() {
         if (winMusic.isPlaying && winMusic.isPlaying()) {
           winMusic.stop();
         }
-        winMusic.loop();
+        winMusic.loop(); // Win loop — see README References / Pixabay [4]
       }
     }
 
@@ -826,6 +837,7 @@ function draw() {
     energyBoostTimer--;
   }
 
+  // README Iteration Notes (post-playtest) + [6] fatigue — shake when energy is low
   const lowEnergyHud =
     player.maxEnergy > 0 && player.energy <= player.maxEnergy * 0.75;
   let barShakeX = 0;
