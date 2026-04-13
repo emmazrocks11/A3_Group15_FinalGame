@@ -21,10 +21,10 @@ Cherry Ke - c5ke - 21090404
 
 You control a soft blob character moving through increasingly complex environments. Core mechanics are built around:
 
-- **Energy**: Every jump and sprint spends energy; when energy is low, movement and jumps feel heavier. Energy slowly regenerates when you slow down or rest.
+- **Energy**: Every jump and sprint spends energy; when energy is low, movement and jumps feel heavier. Energy slowly regenerates when you rest.
 - **Movement**: A/D or arrow keys to move, Space/W/Up to jump, and Shift to sprint (faster but more draining).
 - **Double jump**: A second jump is available in the air when your energy is high enough, but it costs extra energy.
-- **Checkpoints as sunflowers**: Reaching a sunflower plants a new respawn point and briefly shows a large cue word such as **FOCUS** or **BALANCE**, emphasizing the mental strategies players use to cope.
+- **Checkpoints as daisies**: Reaching a sunflodaisywer plants a new respawn point and briefly shows a large cue word such as **FOCUS** or **BALANCE**, emphasizing the mental strategies players use to cope.
 - **Rain and weather**: Moving through rain clouds slows the character, representing environmental or sensory load that makes everything feel harder.
 
 Overall, the game aims to combine readable platforming with moment‑to‑moment changes in control, prompting players to notice how much cognitive effort “simple” movement can demand.
