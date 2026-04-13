@@ -418,19 +418,6 @@ function loadLevel(i) {
     }
   }
 
-  let rainEndX = -Infinity;
-  for (const z of rainZones) {
-    if (z && typeof z.endX === "number") rainEndX = max(rainEndX, z.endX);
-  }
-  if (rainEndX > -Infinity && level && level.platforms) {
-    const afterRain = level.platforms
-      .filter((p) => p.isDisappearing && p.baseX > rainEndX)
-      .sort((a, b) => a.baseX - b.baseX);
-    for (let i = 0; i < min(2, afterRain.length); i++) {
-      afterRain[i].longFirstVisiblePhase = true;
-    }
-  }
-
   if (collectiblesData && collectiblesData.lightningZone) {
     lightningZone = collectiblesData.lightningZone;
   } else {
