@@ -446,7 +446,7 @@ class BlobPlayer {
         push();
         imageMode(CENTER);
         // Scale from native aspect ratio (no stretch): match ~collision height, width follows art
-        const targetH = (this.r * 2 + 15) * 1.67;
+        const targetH = (this.r * 2 + 15) * 1.7;
         const uniformScale = targetH / img.height;
         const dw = img.width * uniformScale;
         const dh = targetH;
