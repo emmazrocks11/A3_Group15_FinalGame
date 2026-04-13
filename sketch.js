@@ -18,6 +18,35 @@ Learning goals:
 
 const VIEW_W = 800;
 const VIEW_H = 480;
+
+/** Ordered walk cycle for the player (assets/images). */
+const PLAYER_WALK_FRAME_FILES = [
+  "1.png",
+  "2.png",
+  "3.png",
+  "4.png",
+  "4-1.png",
+  "5.png",
+  "6.png",
+  "7.png",
+  "8.png",
+  "9.png",
+  "10.png",
+  "11.png",
+  "12.png",
+  "13.png",
+  "14.png",
+  "15.png",
+  "16.png",
+  "17.png",
+  "18.png",
+];
+const PLAYER_JUMP_FRAME_FILES = [
+  "jump2 1.png",
+  "jump3 1.png",
+  "jump4 1.png",
+  "jump5 1.png",
+];
 /** First drop-in spawn: shift left from `level.start.x` (JSON stays canonical). */
 const INITIAL_SPAWN_X_OFFSET = 30;
 
@@ -68,13 +97,17 @@ let jumpSound;
 let walkStepGrassL;
 let walkStepGrassR;
 let shineSound;
+let starCollectSound;
+let rainAmbienceSound;
 let splashSound;
 let uiHoverSound;
 let uiClickSound;
 let lobbyMusic;
 let winMusic;
-let walk1Img;
-let walk2Img;
+/** @type {p5.Image[]} */
+let playerWalkFrames = [];
+/** @type {p5.Image[]} */
+let playerJumpFrames = [];
 let seedImg;
 let grow1Img;
 let grow2Img;
@@ -145,14 +178,19 @@ function preload() {
   walkStepGrassL = loadSound("assets/sounds/sfx_step_grass_l.mp3");
   walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3");
   shineSound = loadSound("assets/sounds/shine.mp3");
+  starCollectSound = loadSound("assets/sounds/starcollect.mp3");
+  rainAmbienceSound = loadSound("assets/sounds/rain.mp3");
   splashSound = loadSound("assets/sounds/splash.mp3");
   uiHoverSound = loadSound("assets/sounds/hover.mp3");
   uiClickSound = loadSound("assets/sounds/clicksound.mp3");
   lobbyMusic = loadSound("assets/sounds/lobbymusic.mp3");
   winMusic = loadSound("assets/sounds/winmusic.mp3");
-  // Load blob walk animation frames
-  walk1Img = loadImage("assets/images/walk1.png");
-  walk2Img = loadImage("assets/images/walk2.png");
+  playerWalkFrames = PLAYER_WALK_FRAME_FILES.map((f) =>
+    loadImage("assets/images/" + f),
+  );
+  playerJumpFrames = PLAYER_JUMP_FRAME_FILES.map((f) =>
+    loadImage("assets/images/" + f),
+  );
   seedImg = loadImage("assets/images/seed.png");
   grow1Img = loadImage("assets/images/grow1.png");
   grow2Img = loadImage("assets/images/grow2.png");
@@ -206,6 +244,12 @@ function setup() {
   if (shineSound && typeof shineSound.setVolume === "function") {
     shineSound.setVolume(0.75);
   }
+  if (starCollectSound && typeof starCollectSound.setVolume === "function") {
+    starCollectSound.setVolume(0.8);
+  }
+  if (rainAmbienceSound && typeof rainAmbienceSound.setVolume === "function") {
+    rainAmbienceSound.setVolume(0.42);
+  }
   if (splashSound && typeof splashSound.setVolume === "function") {
     splashSound.setVolume(0.85);
   }
@@ -233,6 +277,32 @@ function stopWalkStepSfx() {
   }
 }
 
+function stopRainAmbienceSound() {
+  if (rainAmbienceSound && rainAmbienceSound.isPlaying && rainAmbienceSound.isPlaying()) {
+    rainAmbienceSound.stop();
+  }
+}
+
+function updateRainZoneAmbienceSound() {
+  if (!rainAmbienceSound || typeof rainAmbienceSound.loop !== "function") return;
+  const want =
+    typeof gameStarted !== "undefined" &&
+    gameStarted &&
+    !gameWon &&
+    typeof player !== "undefined" &&
+    player &&
+    player.inRain;
+  if (want) {
+    const playing =
+      rainAmbienceSound.isPlaying && rainAmbienceSound.isPlaying();
+    if (!playing) {
+      rainAmbienceSound.loop();
+    }
+  } else {
+    stopRainAmbienceSound();
+  }
+}
+
 function loadLevel(i) {
   _prevPlayerWorldBottom = null;
   fallDeathRespawnAtMs = null;
@@ -246,14 +316,16 @@ function loadLevel(i) {
   // Platforms use grass tile strips (end 1 / middle 1–2 / end 2) in WorldLevel when art loads
 
   stopWalkStepSfx();
+  stopRainAmbienceSound();
   if (winMusic && winMusic.isPlaying && winMusic.isPlaying()) {
     winMusic.stop();
   }
   player = new BlobPlayer(
     jumpSound,
-    [walk1Img, walk2Img],
+    playerWalkFrames,
     walkStepGrassL,
     walkStepGrassR,
+    playerJumpFrames,
   );
   player.spawnFromLevel(level);
 
@@ -415,10 +487,15 @@ function returnToStartScreen() {
 }
 
 function respawnPlayer() {
-  if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-    walkSound.stop();
-  }
-  player = new BlobPlayer(jumpSound, [walk1Img, walk2Img], walkSound);
+  fallDeathRespawnAtMs = null;
+  stopWalkStepSfx();
+  player = new BlobPlayer(
+    jumpSound,
+    playerWalkFrames,
+    walkStepGrassL,
+    walkStepGrassR,
+    playerJumpFrames,
+  );
   if (respawnPoint) {
     const dropHeight = 220;
     player.spawnAt(respawnPoint.x, respawnPoint.y - dropHeight);
@@ -435,6 +512,7 @@ function respawnPlayer() {
   cam.x = player.x - width / 2;
   cam.y = 0;
   cam.clampToWorld(level.w, level.h);
+  _prevPlayerWorldBottom = null;
 }
 
 /**
@@ -562,6 +640,7 @@ function draw() {
   }
 
   if (!gameStarted) {
+    stopRainAmbienceSound();
     tryStartLobbyMusic();
     drawStartScreen();
     if (mainMenuFadeInFramesLeft > 0) {
@@ -588,6 +667,7 @@ function draw() {
       break;
     }
   }
+  updateRainZoneAmbienceSound();
 
   const awaitingFinalDaisy =
     checkpoint3 &&
@@ -610,6 +690,9 @@ function draw() {
           player.applyStarEnergyBonus(player.starsCollected);
           player.energy = player.maxEnergy;
           energyBoostTimer = 60;
+          if (starCollectSound && typeof starCollectSound.play === "function") {
+            starCollectSound.play();
+          }
         }
       }
 
@@ -674,9 +757,7 @@ function draw() {
     if (!gameWon && player.y - player.r > level.deathY) {
       if (fallDeathRespawnAtMs === null) {
         fallDeathRespawnAtMs = millis() + FALL_DEATH_RESPAWN_DELAY_MS;
-        if (walkSound && walkSound.isPlaying && walkSound.isPlaying()) {
-          walkSound.stop();
-        }
+        stopWalkStepSfx();
       }
     }
   }
