@@ -97,6 +97,8 @@ let jumpSound;
 let walkStepGrassL;
 let walkStepGrassR;
 let shineSound;
+let starCollectSound;
+let rainAmbienceSound;
 let splashSound;
 let uiHoverSound;
 let uiClickSound;
@@ -176,6 +178,8 @@ function preload() {
   walkStepGrassL = loadSound("assets/sounds/sfx_step_grass_l.mp3");
   walkStepGrassR = loadSound("assets/sounds/sfx_step_grass_r.mp3");
   shineSound = loadSound("assets/sounds/shine.mp3");
+  starCollectSound = loadSound("assets/sounds/starcollect.mp3");
+  rainAmbienceSound = loadSound("assets/sounds/rain.mp3");
   splashSound = loadSound("assets/sounds/splash.mp3");
   uiHoverSound = loadSound("assets/sounds/hover.mp3");
   uiClickSound = loadSound("assets/sounds/clicksound.mp3");
@@ -240,6 +244,12 @@ function setup() {
   if (shineSound && typeof shineSound.setVolume === "function") {
     shineSound.setVolume(0.75);
   }
+  if (starCollectSound && typeof starCollectSound.setVolume === "function") {
+    starCollectSound.setVolume(0.8);
+  }
+  if (rainAmbienceSound && typeof rainAmbienceSound.setVolume === "function") {
+    rainAmbienceSound.setVolume(0.42);
+  }
   if (splashSound && typeof splashSound.setVolume === "function") {
     splashSound.setVolume(0.85);
   }
@@ -267,6 +277,32 @@ function stopWalkStepSfx() {
   }
 }
 
+function stopRainAmbienceSound() {
+  if (rainAmbienceSound && rainAmbienceSound.isPlaying && rainAmbienceSound.isPlaying()) {
+    rainAmbienceSound.stop();
+  }
+}
+
+function updateRainZoneAmbienceSound() {
+  if (!rainAmbienceSound || typeof rainAmbienceSound.loop !== "function") return;
+  const want =
+    typeof gameStarted !== "undefined" &&
+    gameStarted &&
+    !gameWon &&
+    typeof player !== "undefined" &&
+    player &&
+    player.inRain;
+  if (want) {
+    const playing =
+      rainAmbienceSound.isPlaying && rainAmbienceSound.isPlaying();
+    if (!playing) {
+      rainAmbienceSound.loop();
+    }
+  } else {
+    stopRainAmbienceSound();
+  }
+}
+
 function loadLevel(i) {
   _prevPlayerWorldBottom = null;
   fallDeathRespawnAtMs = null;
@@ -280,6 +316,7 @@ function loadLevel(i) {
   // Platforms use grass tile strips (end 1 / middle 1–2 / end 2) in WorldLevel when art loads
 
   stopWalkStepSfx();
+  stopRainAmbienceSound();
   if (winMusic && winMusic.isPlaying && winMusic.isPlaying()) {
     winMusic.stop();
   }
@@ -603,6 +640,7 @@ function draw() {
   }
 
   if (!gameStarted) {
+    stopRainAmbienceSound();
     tryStartLobbyMusic();
     drawStartScreen();
     if (mainMenuFadeInFramesLeft > 0) {
@@ -629,6 +667,7 @@ function draw() {
       break;
     }
   }
+  updateRainZoneAmbienceSound();
 
   const awaitingFinalDaisy =
     checkpoint3 &&
@@ -651,6 +690,9 @@ function draw() {
           player.applyStarEnergyBonus(player.starsCollected);
           player.energy = player.maxEnergy;
           energyBoostTimer = 60;
+          if (starCollectSound && typeof starCollectSound.play === "function") {
+            starCollectSound.play();
+          }
         }
       }
 

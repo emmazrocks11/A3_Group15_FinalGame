@@ -62,10 +62,10 @@ class BlobPlayer {
     this._walkStepNextLeft = true;
     this._nextWalkStepAllowedMs = 0;
     /** Play grass step every N walk-frame advances (sprite still updates every advance). */
-    this._walkSfxStride = walkFrames && walkFrames.length > 8 ? 5 : 2;
+    this._walkSfxStride = walkFrames && walkFrames.length > 8 ? 7 : 4;
     this._walkSfxStrideCounter = 0;
     /** Minimum ms between step plays (avoids rapid L/R machine-gun). */
-    this.walkStepMinGapMs = 130;
+    this.walkStepMinGapMs = 220;
     this.walkStepVolume = 0.7;
 
     // Sprite animation
