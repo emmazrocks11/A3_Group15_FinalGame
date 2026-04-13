@@ -23,7 +23,10 @@ class Platform {
     this.maxVisibleFrames = options.maxVisibleFrames ?? 160;
     this.minHiddenFrames = options.minHiddenFrames ?? 30;
     this.maxHiddenFrames = options.maxHiddenFrames ?? 140;
-    this.visibleDuration = options.visibleDuration || 120; // frames
+    this.visibleDuration = min(
+      options.visibleDuration || 120,
+      Platform.maxVisiblePhaseFrames,
+    ); // frames
     this.hiddenDuration = min(
       options.hiddenDuration || 120,
       Platform.maxHiddenPhaseFrames,
@@ -45,10 +48,17 @@ class Platform {
 
     if (this.isDisappearing && this.randomBlink) {
       // Random phase is chosen the first time the platform enters the viewport (see update()).
-      this.phaseEnd = floor(
-        random(this.minVisibleFrames, this.maxVisibleFrames + 1),
+      this.phaseEnd = Platform.clampVisiblePhaseLength(
+        floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1)),
       );
     }
+  }
+
+  /** ~60fps: visible stretch never longer than ~4s wall clock. */
+  static maxVisiblePhaseFrames = 4 * 60;
+
+  static clampVisiblePhaseLength(frames) {
+    return min(max(1, frames), Platform.maxVisiblePhaseFrames);
   }
 
   /** ~60fps frame cap: hidden stretch never longer than ~5s wall clock. */
@@ -104,14 +114,20 @@ class Platform {
           if (!this.firstIntroVisiblePhaseDone) {
             this.isVisible = true;
             const hz = 60;
-            const introLo = 4 * hz;
-            const introHi = 7 * hz;
-            this.phaseEnd = floor(random(introLo, introHi + 1));
+            const introLo = 1 * hz;
+            const introHi = 3 * hz;
+            this.phaseEnd = Platform.clampVisiblePhaseLength(
+              floor(random(introLo, introHi + 1)),
+            );
             this.timer = 0;
           } else {
             this.isVisible = random() < 0.62;
             this.phaseEnd = this.isVisible
-              ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
+              ? Platform.clampVisiblePhaseLength(
+                  floor(
+                    random(this.minVisibleFrames, this.maxVisibleFrames + 1),
+                  ),
+                )
               : Platform.clampHiddenPhaseLength(
                   floor(
                     random(this.minHiddenFrames, this.maxHiddenFrames + 1),
@@ -133,7 +149,11 @@ class Platform {
           this.isVisible = !this.isVisible;
           this.timer = 0;
           this.phaseEnd = this.isVisible
-            ? floor(random(this.minVisibleFrames, this.maxVisibleFrames + 1))
+            ? Platform.clampVisiblePhaseLength(
+                floor(
+                  random(this.minVisibleFrames, this.maxVisibleFrames + 1),
+                ),
+              )
             : Platform.clampHiddenPhaseLength(
                 floor(
                   random(this.minHiddenFrames, this.maxHiddenFrames + 1),

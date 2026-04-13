@@ -134,6 +134,12 @@ let checkpoint2 = null;
 let checkpoint3 = null;
 let startCheckpoint = null;
 let gameWon = false;
+/** First in-game `millis()` after Play (null on menu / cleared in `loadLevel`). */
+let runStartMillis = null;
+/** Snapshotted when the player wins (win credits). */
+let winRunDurationMs = 0;
+let winRunStarsCollected = 0;
+let winRunStarsTotal = 0;
 /** Frames since win; drives thank-you → credits → replay. */
 let winScreenTimer = 0;
 /** Frame index when the last credit line scrolled off (null until then). */
@@ -311,6 +317,7 @@ function loadLevel(i) {
   winScreenCreditsDoneFrame = null;
   winToMenuBlackoutFramesLeft = null;
   mainMenuFadeInFramesLeft = 0;
+  runStartMillis = null;
   level = LevelLoader.fromLevelsJson(allLevelsData, i);
 
   // Platforms use grass tile strips (end 1 / middle 1–2 / end 2) in WorldLevel when art loads
@@ -646,6 +653,10 @@ function draw() {
     return;
   }
 
+  if (!gameWon && runStartMillis === null) {
+    runStartMillis = millis();
+  }
+
   // --- game state ---
   player.inRain = false;
   for (const z of rainZones) {
@@ -723,6 +734,10 @@ function draw() {
 
     if (checkpoint3 && checkpoint3.finalSequenceComplete()) {
       gameWon = true;
+      winRunDurationMs =
+        runStartMillis != null ? millis() - runStartMillis : 0;
+      winRunStarsCollected = totalStarsCollected;
+      winRunStarsTotal = stars.length;
       fallDeathRespawnAtMs = null;
       winScreenTimer = 0;
       winScreenCreditsDoneFrame = null;
@@ -1051,6 +1066,15 @@ function draw() {
   noStroke();
 }
 
+/** Format `ms` as m:ss for win stats (whole seconds). */
+function formatRunTimeMs(ms) {
+  const msec = max(0, ms);
+  const totalSec = floor(msec / 1000);
+  const m = floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${nf(s, 2)}`;
+}
+
 function drawWinScreen() {
   const t = winScreenTimer;
 
@@ -1080,7 +1104,7 @@ function drawWinScreen() {
     rect(0, 0, VIEW_W, VIEW_H);
   }
 
-  // Reel (top → bottom scroll): names → “Created by:” → Daisy logo → “Thank you”
+  // Reel (top → bottom scroll): time/stats → names → “Created by:” → Daisy logo → “Thank you”
   textAlign(CENTER, TOP);
 
   if (reelTop <= VIEW_H) {
@@ -1088,13 +1112,26 @@ function drawWinScreen() {
 
     textFont("Inter");
     textStyle(NORMAL);
+    textSize(17);
+    fill(210, 225, 245);
+    text(`Time: ${formatRunTimeMs(winRunDurationMs)}`, VIEW_W / 2, y);
+    y += WIN_CREDITS_LINE_GAP;
+    text(
+      `Stars collected: ${winRunStarsCollected} / ${winRunStarsTotal}`,
+      VIEW_W / 2,
+      y,
+    );
+    y += WIN_CREDITS_LINE_GAP + 10;
     textSize(18);
     fill(240, 245, 250);
-    for (let i = 0; i < WIN_SCREEN_CREDITS.length; i++) {
+    if (WIN_SCREEN_CREDITS.length > 0) {
+      text(WIN_SCREEN_CREDITS[0], VIEW_W / 2, y);
+      y += WIN_CREDITS_LINE_GAP;
+    }
+    for (let i = 1; i < WIN_SCREEN_CREDITS.length; i++) {
       text(WIN_SCREEN_CREDITS[i], VIEW_W / 2, y);
       y += WIN_CREDITS_LINE_GAP;
     }
-    y += 10;
     textSize(16);
     fill(200, 210, 225);
     text("Created by:", VIEW_W / 2, y);
