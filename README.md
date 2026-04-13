@@ -88,8 +88,6 @@ https://pixabay.com/sound-effects/film-special-effects-success-bell-6776/
 
 ## References
 
-References
-
 [1] 2025. ABI vs. TBI: What is the difference? Brain Injury Association of America. Retrieved March 11, 2026 from https://biausa.org/brain-injury/about-brain-injury/nbiic/what-is-the-difference-between-an-acquired-brain-injury-and-a-traumatic-brain-injury
 
 [2] 2026. Chloe Howard. Brain Injury Association of America. Retrieved March 11, 2026 from https://biausa.org/brain-injury/community/personal-stories/chloe-howard
