@@ -450,6 +450,7 @@ function returnToStartScreen() {
 }
 
 function respawnPlayer() {
+  fallDeathRespawnAtMs = null;
   stopWalkStepSfx();
   player = new BlobPlayer(
     jumpSound,
@@ -474,6 +475,7 @@ function respawnPlayer() {
   cam.x = player.x - width / 2;
   cam.y = 0;
   cam.clampToWorld(level.w, level.h);
+  _prevPlayerWorldBottom = null;
 }
 
 /**
